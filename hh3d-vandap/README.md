@@ -1,19 +1,32 @@
-# 🎯 HH3D Vấn Đáp Helper
+# 🎯 HH3D Vấn Đáp Helper - Chrome Extension MV3
 
-Extension Chrome hỗ trợ tự động giải bài vấn đáp trên HoatHinh3D.mx
+Extension Chrome Manifest V3 tự động hỗ trợ giải vấn đáp trên trang HoatHinh3D với khả năng phát hiện thông minh, auto-click và chế độ tự động hoàn toàn.
 
-## ✨ Tính năng
+## ✨ Tính năng hoàn thiện
 
-- 🔍 **Tự động phát hiện câu hỏi** trên trang vấn đáp
-- 🎯 **Tìm đáp án** từ database 203+ câu hỏi có sẵn
-- 🤖 **Tự động click đáp án** (có thể bật/tắt)
-- 🚀 **Chế độ tự động hoàn toàn** - tự động tìm đáp án, click và lặp lại
-- ⏹️ **Dừng tự động** - dừng tất cả hoạt động tự động
-- 🔄 **Khởi động lại** - reset quiz từ đầu
-- 📊 **Theo dõi tiến độ** (x/5 câu hỏi)
-- 📝 **Ghi nhật ký** hoạt động chi tiết
-- 🔄 **Real-time monitoring** thay đổi DOM
-- 🎮 **TEST & PROD mode** support
+### 🔍 Phát hiện thông minh
+- **Multi-strategy detection**: Sử dụng nhiều selector strategies để phát hiện câu hỏi
+- **Shadow DOM support**: Traversal Shadow DOM để tìm câu hỏi ẩn
+- **Fuzzy matching**: So sánh với accent stripping, word overlap scoring  
+- **Resilient DOM monitoring**: Hoạt động với SPA navigation và DOM changes
+
+### 🤖 Tự động hóa an toàn
+- **Auto-click**: Tự động nhấn đáp án đúng với randomized delays
+- **Auto mode**: Chế độ tự động hoàn toàn qua 5 câu hỏi
+- **Smart safety**: Single click per question, rate limiting
+- **Human-like behavior**: Realistic delays và interaction patterns
+
+### 🎛️ Điều khiển linh hoạt
+- **Real-time popup UI**: Interface trực quan với live status updates
+- **Manual controls**: Click thủ công, refresh, restart, stop any time
+- **Pin popup**: Ghim popup để không tự đóng khi auto-click
+- **Persistent settings**: Auto-save pin state và preferences
+
+### 📊 Monitoring & Diagnostics
+- **Live status tracking**: Real-time question/answer/progress display
+- **Available options display**: Hiển thị tất cả lựa chọn được detect
+- **Comprehensive logging**: Multi-level logs với diagnostic info
+- **Error resilience**: Graceful degradation với extensive error handling
 
 ## 🚀 Cài đặt
 

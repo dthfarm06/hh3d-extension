@@ -1,5 +1,13 @@
 // HH3D Vấn Đáp Helper - Content Script
+/**
+ * Main class for handling HH3D quiz automation.
+ * Manages question detection, answer matching, and auto-click functionality.
+ */
 class VanDapHelper {
+    /**
+     * Initialize the VanDapHelper instance.
+     * Sets up initial state and begins monitoring for quiz questions.
+     */
     constructor() {
         this.isTestMode = this.detectTestMode();
         this.isActive = false;
@@ -59,17 +67,23 @@ class VanDapHelper {
         }
     }
 
-    // Phát hiện chế độ test (file local) hoặc production
+    /**
+     * Phát hiện chế độ test (file local) hoặc production.
+     * @returns {boolean} True if in test mode, false for production.
+     */
     detectTestMode() {
         const isTest = window.location.protocol === 'file:' || 
                        window.location.href.includes('mock-vandap.html');
         return isTest;
     }
 
-    // Kiểm tra xem có phải trang vấn đáp không
+    /**
+     * Kiểm tra xem có phải trang vấn đáp không.
+     * @returns {boolean} True if on quiz page, false otherwise.
+     */
     isVanDapPage() {
         const currentUrl = window.location.href;
-        console.log('[VanDap Helper] Checking URL:', currentUrl);
+        this.log('info', 'Checking URL:', currentUrl);
         
         if (this.isTestMode) {
             return currentUrl.includes('mock-vandap.html') || currentUrl.includes('test-vandap.html');
@@ -86,17 +100,19 @@ class VanDapHelper {
         }
     }
 
-    // Khởi tạo
+    /**
+     * Khởi tạo extension, monitor URL changes và setup khi cần.
+     */
     init() {
         // Luôn luôn monitor URL changes, không chỉ trên trang vấn đáp
         this.startUrlMonitoring();
         
         if (!this.isVanDapPage()) {
-            console.log('[VanDap Helper] Not on vấn đáp page, but monitoring URL changes');
+            this.log('info', 'Not on vấn đáp page, but monitoring URL changes');
             return;
         }
 
-        console.log('[VanDap Helper] Initializing on vấn đáp page...');
+        this.log('info', 'Initializing on vấn đáp page...');
         
         // Đợi DOM ready
         if (document.readyState === 'loading') {
@@ -106,303 +122,541 @@ class VanDapHelper {
         }
     }
 
-    // Monitor URL changes cho SPA navigation
+    /**
+     * Bắt đầu theo dõi thay đổi URL cho SPA navigation.
+     * Sử dụng multiple strategies để catch mọi URL changes.
+     */
     startUrlMonitoring() {
         let currentUrl = window.location.href;
         
-        // Override pushState và replaceState
-        const originalPushState = history.pushState;
-        const originalReplaceState = history.replaceState;
-        
-        history.pushState = function(...args) {
-            originalPushState.apply(history, args);
-            setTimeout(() => vanDapHelper.handleUrlChange(), 100);
-        };
-        
-        history.replaceState = function(...args) {
-            originalReplaceState.apply(history, args);
-            setTimeout(() => vanDapHelper.handleUrlChange(), 100);
-        };
-        
-        // Listen for popstate (back/forward buttons)
-        window.addEventListener('popstate', () => {
-            setTimeout(() => vanDapHelper.handleUrlChange(), 100);
-        });
-        
-        // Polling fallback để catch mọi URL changes
-        setInterval(() => {
-            if (window.location.href !== currentUrl) {
-                currentUrl = window.location.href;
-                this.handleUrlChange();
-            }
-        }, 1000);
-        
-        console.log('[VanDap Helper] Started URL monitoring');
-    }
-
-    // Xử lý khi URL thay đổi
-    handleUrlChange() {
-        const wasVanDapPage = this.isActive;
-        const isNowVanDapPage = this.isVanDapPage();
-        
-        console.log('[VanDap Helper] URL changed. Was vấn đáp:', wasVanDapPage, 'Now vấn đáp:', isNowVanDapPage);
-        
-        if (!wasVanDapPage && isNowVanDapPage) {
-            // Vừa vào trang vấn đáp
-            console.log('[VanDap Helper] Entered vấn đáp page, initializing...');
-            this.setup();
-        } else if (wasVanDapPage && !isNowVanDapPage) {
-            // Vừa rời trang vấn đáp
-            console.log('[VanDap Helper] Left vấn đáp page, cleaning up...');
-            this.cleanup();
-        } else if (isNowVanDapPage) {
-            // Vẫn ở trang vấn đáp nhưng URL thay đổi (có thể là quiz mới)
-            console.log('[VanDap Helper] Still on vấn đáp page, restarting...');
-            this.restartQuiz();
-        }
-    }
-
-    // Cleanup khi rời trang
-    cleanup() {
-        this.isActive = false;
-        this.autoMode = false;
-        this.autoClick = false;
-        this.currentQuestion = null;
-        this.currentAnswer = null;
-        this.questionCount = 0;
-        
-        if (this.observer) {
-            this.observer.disconnect();
-            this.observer = null;
-        }
-        
-        if (this.questionCheckInterval) {
-            clearInterval(this.questionCheckInterval);
-            this.questionCheckInterval = null;
-        }
-        
-        console.log('[VanDap Helper] Cleaned up');
-    }
-
-    // Thiết lập chính
-    setup() {
-        console.log('[VanDap Helper] Setting up...');
-        
-        // Đánh dấu đã active
-        this.isActive = true;
-        
-        // Bắt đầu monitor
-        this.startMonitoring();
-        
-        // Bắt đầu kiểm tra câu hỏi định kỳ
-        this.startQuestionChecking();
-        
-        // Kiểm tra câu hỏi ban đầu với delay lớn hơn để DOM load xong
-        setTimeout(() => {
-            this.checkForNewQuestion();
-        }, 2000);
-    }
-
-    // Bắt đầu kiểm tra câu hỏi định kỳ
-    startQuestionChecking() {
-        if (this.questionCheckInterval) {
-            clearInterval(this.questionCheckInterval);
-        }
-        
-        // Kiểm tra câu hỏi mỗi 500ms để phản hồi nhanh hơn
-        this.questionCheckInterval = setInterval(() => {
-            this.checkForNewQuestion();
-        }, 500);
-        
-        console.log('[VanDap Helper] Started periodic question checking');
-    }
-
-    // Bắt đầu theo dõi thay đổi DOM
-    startMonitoring() {
-        if (this.observer) {
-            this.observer.disconnect();
-        }
-
-        this.observer = new MutationObserver((mutations) => {
-            let shouldCheck = false;
+        try {
+            // Override pushState và replaceState
+            const originalPushState = history.pushState;
+            const originalReplaceState = history.replaceState;
             
-            mutations.forEach((mutation) => {
-                if (mutation.type === 'childList' || mutation.type === 'attributes') {
-                    shouldCheck = true;
-                }
+            history.pushState = function(...args) {
+                originalPushState.apply(history, args);
+                setTimeout(() => {
+                    if (window.vanDapHelper) {
+                        window.vanDapHelper.handleUrlChange();
+                    }
+                }, 100);
+            };
+            
+            history.replaceState = function(...args) {
+                originalReplaceState.apply(history, args);
+                setTimeout(() => {
+                    if (window.vanDapHelper) {
+                        window.vanDapHelper.handleUrlChange();
+                    }
+                }, 100);
+            };
+            
+            // Listen for popstate (back/forward buttons)
+            window.addEventListener('popstate', () => {
+                setTimeout(() => {
+                    if (window.vanDapHelper) {
+                        window.vanDapHelper.handleUrlChange();
+                    }
+                }, 100);
             });
             
-            if (shouldCheck) {
-                setTimeout(() => {
-                    this.checkForNewQuestion();
-                }, 100);
-            }
-        });
-
-        this.observer.observe(document.body, {
-            childList: true,
-            subtree: true,
-            attributes: true,
-            attributeFilter: ['style', 'class']
-        });
-
-        console.log('[VanDap Helper] Started DOM monitoring');
+            // Polling fallback để catch mọi URL changes
+            setInterval(() => {
+                try {
+                    if (window.location.href !== currentUrl) {
+                        currentUrl = window.location.href;
+                        this.handleUrlChange();
+                    }
+                } catch (e) {
+                    this.log('error', 'Error in URL polling:', e);
+                }
+            }, 1000);
+            
+            this.log('info', 'Started URL monitoring');
+        } catch (e) {
+            this.log('error', 'Error setting up URL monitoring:', e);
+        }
     }
 
-    // Phát hiện câu hỏi hiện tại
+    /**
+     * Xử lý khi URL thay đổi, kiểm tra trạng thái và setup/cleanup tương ứng.
+     */
+    handleUrlChange() {
+        try {
+            const wasVanDapPage = this.isActive;
+            const isNowVanDapPage = this.isVanDapPage();
+            
+            this.log('info', `URL changed. Was vấn đáp: ${wasVanDapPage}, Now vấn đáp: ${isNowVanDapPage}`);
+            
+            if (!wasVanDapPage && isNowVanDapPage) {
+                // Vừa vào trang vấn đáp
+                this.log('info', 'Entered vấn đáp page, initializing...');
+                this.setup();
+            } else if (wasVanDapPage && !isNowVanDapPage) {
+                // Vừa rời trang vấn đáp
+                this.log('info', 'Left vấn đáp page, cleaning up...');
+                this.cleanup();
+            } else if (isNowVanDapPage) {
+                // Vẫn ở trang vấn đáp nhưng URL thay đổi (có thể là quiz mới)
+                this.log('info', 'Still on vấn đáp page, restarting...');
+                this.restartQuiz();
+            }
+        } catch (e) {
+            this.log('error', 'Error handling URL change:', e);
+        }
+    }
+
+    /**
+     * Dọn dẹp khi rời trang vấn đáp.
+     * Stops all automation, clears intervals, and resets state.
+     */
+    cleanup() {
+        try {
+            this.isActive = false;
+            this.autoMode = false;
+            this.autoClick = false;
+            this.currentQuestion = null;
+            this.currentAnswer = null;
+            this.questionCount = 0;
+            this.lastQuestionHash = null;
+            
+            if (this.observer) {
+                this.observer.disconnect();
+                this.observer = null;
+            }
+            
+            if (this.questionCheckInterval) {
+                clearInterval(this.questionCheckInterval);
+                this.questionCheckInterval = null;
+            }
+            
+            // Send update to popup
+            this.sendUpdateToPopup();
+            
+            this.log('info', 'Cleaned up');
+        } catch (e) {
+            this.log('error', 'Error during cleanup:', e);
+        }
+    }
+
+    /**
+     * Thiết lập chính khi ở trang vấn đáp.
+     * Initializes monitoring, starts question checking, and sets up DOM observers.
+     */
+    setup() {
+        try {
+            this.log('info', 'Setting up...');
+            
+            // Đánh dấu đã active
+            this.isActive = true;
+            
+            // Bắt đầu monitor
+            this.startMonitoring();
+            
+            // Bắt đầu kiểm tra câu hỏi định kỳ
+            this.startQuestionChecking();
+            
+            // Kiểm tra câu hỏi ban đầu với delay lớn hơn để DOM load xong
+            setTimeout(() => {
+                this.checkForNewQuestion();
+            }, 2000);
+            
+            // Send initial update to popup
+            this.sendUpdateToPopup();
+        } catch (e) {
+            this.log('error', 'Error during setup:', e);
+        }
+    }
+
+    /**
+     * Bắt đầu kiểm tra câu hỏi định kỳ.
+     * Uses interval to periodically check for new questions.
+     */
+    startQuestionChecking() {
+        try {
+            if (this.questionCheckInterval) {
+                clearInterval(this.questionCheckInterval);
+            }
+            
+            // Kiểm tra câu hỏi mỗi 500ms để phản hồi nhanh hơn
+            this.questionCheckInterval = setInterval(() => {
+                try {
+                    this.checkForNewQuestion();
+                } catch (e) {
+                    this.log('error', 'Error in periodic question check:', e);
+                }
+            }, 500);
+            
+            this.log('info', 'Started periodic question checking');
+        } catch (e) {
+            this.log('error', 'Error setting up question checking:', e);
+        }
+    }
+
+    /**
+     * Bắt đầu theo dõi thay đổi DOM với debouncing để tránh thrash.
+     */
+    startMonitoring() {
+        try {
+            if (this.observer) {
+                this.observer.disconnect();
+            }
+
+            let debounceTimer = null;
+            
+            this.observer = new MutationObserver((mutations) => {
+                let shouldCheck = false;
+                
+                mutations.forEach((mutation) => {
+                    if (mutation.type === 'childList' || mutation.type === 'attributes') {
+                        shouldCheck = true;
+                    }
+                });
+                
+                if (shouldCheck) {
+                    // Debounce to avoid excessive checks
+                    if (debounceTimer) {
+                        clearTimeout(debounceTimer);
+                    }
+                    
+                    debounceTimer = setTimeout(() => {
+                        try {
+                            this.checkForNewQuestion();
+                        } catch (e) {
+                            this.log('error', 'Error in mutation observer callback:', e);
+                        }
+                    }, 200); // 200ms debounce
+                }
+            });
+
+            this.observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['style', 'class']
+            });
+
+            this.log('info', 'Started DOM monitoring');
+        } catch (e) {
+            this.log('error', 'Error setting up DOM monitoring:', e);
+        }
+    }
+
+    /**
+     * Phát hiện câu hỏi hiện tại từ DOM.
+     * Tries multiple selectors and includes Shadow DOM traversal.
+     * @returns {string|null} The question text, or null if not found.
+     */
     detectCurrentQuestion() {
         let questionText = null;
         let foundElement = null;
         
-        console.log('[VanDap Helper] Detecting question...');
+        this.log('info', 'Detecting question...');
         
-        if (this.isTestMode) {
-            // Test mode selectors
-            const selectors = ['#question', 'h2', '.question'];
-            
-            for (let selector of selectors) {
-                const element = document.querySelector(selector);
-                if (element && element.textContent.trim()) {
-                    questionText = element.textContent.trim();
-                    foundElement = element;
-                    console.log(`[VanDap Helper] Found question with selector "${selector}":`, questionText);
-                    break;
-                }
-            }
-        } else {
-            // Production mode - thử nhiều selector khác nhau
-            const selectors = [
-                '#question',
-                '.question-text',
-                '.quiz-question',
-                '.question',
-                '[class*="question"]',
-                '[id*="question"]',
-                '[class*="quiz"]',
-                '[id*="quiz"]',
-                // Thêm các selector phổ biến khác
-                '.content h2',
-                '.content h3',
-                '.quiz-content',
-                '.question-content',
-                '.quiz-title',
-                // Generic selectors để tìm text có dấu ?
-                'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-                'p', 'div', 'span',
-                '.title', '.heading', '.text'
-            ];
-            
-            for (let selector of selectors) {
-                try {
-                    const elements = document.querySelectorAll(selector);
-                    
-                    for (let element of elements) {
-                        const text = element.textContent.trim();
-                        // Kiểm tra text có chứa dấu ? và đủ dài để là câu hỏi
-                        if (text && text.includes('?') && text.length > 10 && text.length < 500) {
-                            questionText = text;
-                            foundElement = element;
-                            console.log(`[VanDap Helper] Found question with selector "${selector}":`, questionText);
-                            break;
-                        }
-                    }
-                    
-                    if (questionText) break;
-                } catch (error) {
-                    console.log(`[VanDap Helper] Error with selector "${selector}":`, error);
-                }
-            }
-        }
-        
-        // Debug: Log tất cả elements có chứa dấu ?
-        if (!questionText) {
-            console.log('[VanDap Helper] No question found, debugging...');
-            const allElements = document.querySelectorAll('*');
-            const elementsWithQuestion = Array.from(allElements)
-                .filter(el => el.textContent.includes('?') && el.textContent.trim().length > 5)
-                .slice(0, 10); // Chỉ log 10 elements đầu
+        try {
+            if (this.isTestMode) {
+                // Test mode selectors
+                const selectors = ['#question', 'h2', '.question'];
                 
-            console.log('[VanDap Helper] Elements containing "?":', elementsWithQuestion.map(el => ({
-                tag: el.tagName,
-                class: el.className,
-                id: el.id,
-                text: el.textContent.trim().substring(0, 100)
-            })));
+                for (let selector of selectors) {
+                    const element = document.querySelector(selector);
+                    if (element && element.textContent.trim()) {
+                        questionText = this.normalizeText(element.textContent.trim());
+                        foundElement = element;
+                        this.log('info', `Found question with selector "${selector}":`, questionText);
+                        break;
+                    }
+                }
+            } else {
+                // Production mode - thử nhiều selector khác nhau
+                const selectors = [
+                    '#question',
+                    '.question-text',
+                    '.quiz-question',
+                    '.question',
+                    '[class*="question"]',
+                    '[id*="question"]',
+                    '[class*="quiz"]',
+                    '[id*="quiz"]',
+                    // Thêm các selector phổ biến khác
+                    '.content h2',
+                    '.content h3',
+                    '.quiz-content',
+                    '.question-content',
+                    '.quiz-title',
+                    // Generic selectors để tìm text có dấu ?
+                    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                    'p', 'div', 'span',
+                    '.title', '.heading', '.text'
+                ];
+                
+                // First try regular DOM selectors
+                for (let selector of selectors) {
+                    try {
+                        const elements = document.querySelectorAll(selector);
+                        
+                        for (let element of elements) {
+                            const text = this.normalizeText(element.textContent.trim());
+                            // Kiểm tra text có chứa dấu ? và đủ dài để là câu hỏi
+                            if (text && text.includes('?') && text.length > 10 && text.length < 500) {
+                                questionText = text;
+                                foundElement = element;
+                                this.log('info', `Found question with selector "${selector}":`, questionText);
+                                break;
+                            }
+                        }
+                        
+                        if (questionText) break;
+                    } catch (error) {
+                        this.log('warn', `Error with selector "${selector}":`, error);
+                    }
+                }
+                
+                // If not found, try Shadow DOM traversal
+                if (!questionText) {
+                    questionText = this.searchInShadowDOM();
+                }
+            }
+            
+            // Debug: Log tất cả elements có chứa dấu ?
+            if (!questionText) {
+                this.log('warn', 'No question found, debugging...');
+                this.debugQuestionElements();
+            }
+            
+        } catch (e) {
+            this.log('error', 'Error detecting question:', e);
         }
         
         return questionText;
     }
 
-    // Tìm đáp án trong database
+    /**
+     * Normalize text by trimming and collapsing spaces.
+     * @param {string} text - Text to normalize.
+     * @returns {string} Normalized text.
+     */
+    normalizeText(text) {
+        return text.replace(/\s+/g, ' ').trim();
+    }
+
+    /**
+     * Search for questions in Shadow DOM elements.
+     * @returns {string|null} Question text if found, null otherwise.
+     */
+    searchInShadowDOM() {
+        try {
+            const allElements = document.querySelectorAll('*');
+            
+            for (let element of allElements) {
+                if (element.shadowRoot) {
+                    const shadowElements = element.shadowRoot.querySelectorAll('*');
+                    
+                    for (let shadowEl of shadowElements) {
+                        const text = this.normalizeText(shadowEl.textContent || '');
+                        if (text && text.includes('?') && text.length > 10 && text.length < 500) {
+                            this.log('info', 'Found question in Shadow DOM:', text);
+                            return text;
+                        }
+                    }
+                }
+            }
+        } catch (e) {
+            this.log('error', 'Error searching Shadow DOM:', e);
+        }
+        
+        return null;
+    }
+
+    /**
+     * Debug helper to log elements containing question marks.
+     */
+    debugQuestionElements() {
+        try {
+            const allElements = document.querySelectorAll('*');
+            const elementsWithQuestion = Array.from(allElements)
+                .filter(el => el.textContent.includes('?') && el.textContent.trim().length > 5)
+                .slice(0, 10); // Chỉ log 10 elements đầu
+                
+            this.log('info', 'Elements containing "?":', elementsWithQuestion.map(el => ({
+                tag: el.tagName,
+                class: el.className,
+                id: el.id,
+                text: el.textContent.trim().substring(0, 100)
+            })));
+        } catch (e) {
+            this.log('error', 'Error debugging question elements:', e);
+        }
+    }
+
+    /**
+     * Tìm đáp án trong database với multiple matching strategies.
+     * @param {string} question - The question text to find answer for.
+     * @returns {object|null} The question data object, or null if not found.
+     */
     findAnswer(question) {
         if (!question) return null;
         
-        // Làm sạch text để so sánh tốt hơn
-        const cleanQuestion = question.replace(/\s+/g, ' ').trim();
-        
-        // Tìm exact match trước
-        let foundItem = questionData.find(item => 
-            item.cau_hoi.replace(/\s+/g, ' ').trim() === cleanQuestion
-        );
-        
-        // Nếu không tìm thấy exact match, tìm partial match
-        if (!foundItem) {
-            foundItem = questionData.find(item => {
-                const cleanDbQuestion = item.cau_hoi.replace(/\s+/g, ' ').trim();
-                return cleanDbQuestion.includes(cleanQuestion) || 
-                       cleanQuestion.includes(cleanDbQuestion);
-            });
+        try {
+            // Làm sạch text để so sánh tốt hơn
+            const cleanQuestion = this.normalizeText(question);
+            
+            // Strategy 1: Exact match
+            let foundItem = questionData.find(item => 
+                this.normalizeText(item.cau_hoi) === cleanQuestion
+            );
+            
+            // Strategy 2: Contains match (case insensitive)
+            if (!foundItem) {
+                foundItem = questionData.find(item => {
+                    const dbQuestion = this.normalizeText(item.cau_hoi).toLowerCase();
+                    const searchQuestion = cleanQuestion.toLowerCase();
+                    return dbQuestion.includes(searchQuestion) || searchQuestion.includes(dbQuestion);
+                });
+            }
+            
+            // Strategy 3: Accent-stripped match
+            if (!foundItem) {
+                const strippedQuestion = this.stripAccents(cleanQuestion).toLowerCase();
+                foundItem = questionData.find(item => {
+                    const strippedDbQuestion = this.stripAccents(this.normalizeText(item.cau_hoi)).toLowerCase();
+                    return strippedDbQuestion === strippedQuestion || 
+                           strippedDbQuestion.includes(strippedQuestion) || 
+                           strippedQuestion.includes(strippedDbQuestion);
+                });
+            }
+            
+            // Strategy 4: Word overlap matching
+            if (!foundItem) {
+                foundItem = this.findByWordOverlap(cleanQuestion);
+            }
+            
+            if (foundItem) {
+                this.log('info', `Found answer for question: "${cleanQuestion}" -> "${foundItem.dap_an}"`);
+            } else {
+                this.log('warn', `No answer found for question: "${cleanQuestion}"`);
+            }
+            
+            return foundItem;
+        } catch (e) {
+            this.log('error', 'Error finding answer:', e);
+            return null;
         }
-        
-        return foundItem;
     }
 
-    // Lấy danh sách options hiện tại
+    /**
+     * Strip Vietnamese accents from text for fuzzy matching.
+     * @param {string} text - Text to strip accents from.
+     * @returns {string} Text without accents.
+     */
+    stripAccents(text) {
+        return text
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[đĐ]/g, 'd');
+    }
+
+    /**
+     * Find question by word overlap scoring.
+     * @param {string} question - Question to find match for.
+     * @returns {object|null} Best matching question data or null.
+     */
+    findByWordOverlap(question) {
+        try {
+            const questionWords = this.stripAccents(question).toLowerCase().split(/\s+/);
+            let bestMatch = null;
+            let bestScore = 0;
+            
+            for (let item of questionData) {
+                const dbWords = this.stripAccents(item.cau_hoi).toLowerCase().split(/\s+/);
+                const overlap = questionWords.filter(word => 
+                    dbWords.some(dbWord => dbWord.includes(word) || word.includes(dbWord))
+                ).length;
+                
+                const score = overlap / Math.max(questionWords.length, dbWords.length);
+                
+                if (score > bestScore && score > 0.6) { // 60% minimum overlap
+                    bestScore = score;
+                    bestMatch = item;
+                }
+            }
+            
+            if (bestMatch) {
+                this.log('info', `Found match by word overlap (score: ${bestScore.toFixed(2)}):`, bestMatch.cau_hoi);
+            }
+            
+            return bestMatch;
+        } catch (e) {
+            this.log('error', 'Error in word overlap matching:', e);
+            return null;
+        }
+    }
+
+    /**
+     * Lấy danh sách options hiện tại từ DOM.
+     * @returns {string[]} Array of available option texts.
+     */
     getAvailableOptions() {
         let options = [];
         
-        console.log('[VanDap Helper] Detecting options...');
+        this.log('info', 'Detecting options...');
         
-        if (this.isTestMode) {
-            // Test mode selectors
-            const selectors = ['.option', 'button.option', '.quiz-option', 'button'];
-            
-            for (let selector of selectors) {
-                const elements = document.querySelectorAll(selector);
-                if (elements.length > 0) {
-                    options = Array.from(elements)
-                        .filter(el => el.textContent.trim().length > 0)
-                        .map(el => ({
-                            element: el,
-                            text: el.textContent.trim()
-                        }));
-                    console.log(`[VanDap Helper] Found ${options.length} options with selector "${selector}"`);
-                    break;
+        try {
+            if (this.isTestMode) {
+                // Test mode selectors
+                const selectors = ['.option', 'button.option', '.quiz-option', 'button'];
+                
+                for (let selector of selectors) {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length > 0) {
+                        options = Array.from(elements)
+                            .map(el => this.normalizeText(el.textContent))
+                            .filter(text => text && text.length > 0);
+                        
+                        if (options.length > 0) {
+                            this.log('info', `Found ${options.length} options with selector "${selector}"`);
+                            break;
+                        }
+                    }
+                }
+            } else {
+                // Production mode selectors
+                const selectors = [
+                    '.option', '.answer-option', '.quiz-option',
+                    'button[data-index]', '[class*="choice"]', '[class*="option"]',
+                    '.answer', '.answers button', '.quiz-answers button',
+                    'button', 'a.button', '.btn'
+                ];
+                
+                for (let selector of selectors) {
+                    try {
+                        const elements = document.querySelectorAll(selector);
+                        
+                        if (elements.length > 1) { // Ít nhất 2 options
+                            const candidateOptions = Array.from(elements)
+                                .map(el => this.normalizeText(el.textContent))
+                                .filter(text => text && text.length > 0 && text.length < 200);
+                            
+                            if (candidateOptions.length >= 2) {
+                                options = candidateOptions;
+                                this.log('info', `Found ${options.length} options with selector "${selector}"`);
+                                break;
+                            }
+                        }
+                    } catch (error) {
+                        this.log('warn', `Error with selector "${selector}":`, error);
+                    }
                 }
             }
-        } else {
-            // Production mode - thử nhiều selector
-            const selectors = [
-                '.option',
-                '.quiz-option',
-                '.answer-option',
-                '.choice',
-                '.answer',
-                'button[data-index]',
-                'button[data-answer]',
-                'button[data-option]',
-                '[class*="option"]',
-                '[class*="choice"]',
-                '[class*="answer"]',
-                '[id*="option"]',
-                '[id*="choice"]',
-                '[id*="answer"]',
-                // Generic button selectors
-                'button:not([class*="start"]):not([class*="submit"]):not([class*="next"])',
-                '.quiz-container button',
-                '.question-container button',
-                '.answers button',
-                '.choices button'
+            
+            this.log('info', 'Available options:', options);
+            return options;
+        } catch (e) {
+            this.log('error', 'Error getting available options:', e);
+            return [];
+        }
+    }
             ];
             
             for (let selector of selectors) {
@@ -1756,85 +2010,72 @@ if (document.readyState === 'loading') {
     initVanDapHelper();
 }
 
-// Lắng nghe message từ popup với improved error handling
+// Lắng nghe message từ popup
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    try {
-        if (vanDapHelper) {
-            vanDapHelper.log('info', 'Received message:', request);
-        } else {
-            console.log('[VanDap Helper] Received message:', request);
-        }
-        
-        if (!vanDapHelper) {
-            sendResponse({ success: false, error: 'VanDapHelper not initialized' });
-            return;
-        }
-        
-        switch (request.action) {
-            case 'getState':
-                sendResponse(vanDapHelper.getCurrentState());
-                return; // sync response
-                
-            case 'setAutoClick':
-                vanDapHelper.setAutoClick(!!request.enabled);
-                sendResponse({ success: true });
-                return;
-                
-            case 'setAutoMode':
-                vanDapHelper.setAutoMode(!!request.enabled);
-                sendResponse({ success: true });
-                return;
-                
-            case 'clickAnswer':
-                const clicked = vanDapHelper.clickAnswerManually();
-                sendResponse({ success: !!clicked });
-                return;
-                
-            case 'refreshQuestion':
-                vanDapHelper.checkForNewQuestion();
-                sendResponse({ success: true });
-                return;
-                
-            case 'restartQuiz':
-                vanDapHelper.restartQuiz();
-                sendResponse({ success: true });
-                return;
-                
-            case 'stopAutoMode':
-                vanDapHelper.stopAutoMode();
-                sendResponse({ success: true });
-                return;
-                
-            case 'debugExtension':
-                const debugInfo = vanDapHelper.debugExtension();
-                sendResponse(debugInfo);
-                return;
-                
-            case 'scanPage':
-                // Legacy support - deprecated
-                const pageContent = document.body.textContent;
-                const results = [];
-                
-                questionData.forEach(item => {
-                    if (pageContent.includes(item.cau_hoi)) {
-                        results.push(item);
-                    }
-                });
-                
-                sendResponse({ results: results });
-                return;
-                
-            default:
-                sendResponse({ success: false, error: 'Unknown action' });
-                return;
-        }
-    } catch (e) {
-        if (vanDapHelper) {
-            vanDapHelper.log('error', 'onMessage error:', e);
-        } else {
-            console.error('[VanDap Helper] onMessage error:', e);
-        }
-        sendResponse({ success: false, error: String(e) });
+    console.log('[VanDap Helper] Received message:', request);
+    
+    if (!vanDapHelper) {
+        sendResponse({ error: 'VanDapHelper not initialized' });
+        return;
     }
-    // no async work -> do not return true
+    
+    switch (request.action) {
+        case 'getState':
+            sendResponse(vanDapHelper.getCurrentState());
+            break;
+            
+        case 'setAutoClick':
+            vanDapHelper.setAutoClick(request.enabled);
+            sendResponse({ success: true });
+            break;
+            
+        case 'setAutoMode':
+            vanDapHelper.setAutoMode(request.enabled);
+            sendResponse({ success: true });
+            break;
+            
+        case 'stopAutoMode':
+            vanDapHelper.stopAutoMode();
+            sendResponse({ success: true });
+            break;
+            
+        case 'restartQuiz':
+            vanDapHelper.restartQuiz();
+            sendResponse(vanDapHelper.getCurrentState());
+            break;
+            
+        case 'clickAnswer':
+            const clicked = vanDapHelper.clickAnswerManually();
+            sendResponse({ success: clicked });
+            break;
+            
+        case 'refreshQuestion':
+            vanDapHelper.checkForNewQuestion();
+            sendResponse(vanDapHelper.getCurrentState());
+            break;
+            
+        case 'debugExtension':
+            const debugInfo = vanDapHelper.debugExtension();
+            sendResponse(debugInfo);
+            break;
+            
+        case 'scanPage':
+            // Legacy support - deprecated
+            const pageContent = document.body.textContent;
+            const results = [];
+            
+            questionData.forEach(item => {
+                if (pageContent.includes(item.cau_hoi)) {
+                    results.push(item);
+                }
+            });
+            
+            sendResponse({ results: results });
+            break;
+            
+        default:
+            sendResponse({ error: 'Unknown action' });
+    }
+    
+    return true; // Keep message channel open for async response
 });

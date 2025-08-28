@@ -9,9 +9,25 @@ class VanDapPopup {
 
     init() {
         console.log('[VanDap Popup] Initializing...');
+        this.loadPersistedState();
         this.setupEventListeners();
         this.startPeriodicUpdate();
         this.requestStateUpdate();
+    }
+
+    /**
+     * Load persisted state from chrome.storage.
+     */
+    loadPersistedState() {
+        try {
+            chrome.storage.local.get(['pinned'], (result) => {
+                if (result.pinned) {
+                    this.togglePin(true);
+                }
+            });
+        } catch (e) {
+            console.warn('[VanDap Popup] Could not load persisted state:', e);
+        }
     }
 
     setupEventListeners() {
@@ -228,9 +244,12 @@ class VanDapPopup {
         }
     }
 
-    // Toggle pin popup
-    togglePin() {
-        this.isPinned = !this.isPinned;
+    /**
+     * Toggle pin popup state and persist to storage.
+     * @param {boolean} forceState - Optional force state instead of toggle.
+     */
+    togglePin(forceState = null) {
+        this.isPinned = forceState !== null ? forceState : !this.isPinned;
         const pinBtn = document.getElementById('pinBtn');
         const body = document.body;
         
@@ -239,13 +258,24 @@ class VanDapPopup {
             pinBtn.classList.add('pinned');
             pinBtn.title = 'Bỏ ghim popup';
             pinBtn.textContent = '📍'; // Đổi icon khi được pin
-            this.addLogMessage('📌 Đã ghim popup - sẽ không tự đóng khi click đáp án');
+            if (forceState === null) { // Only log when user manually toggles
+                this.addLogMessage('📌 Đã ghim popup - sẽ không tự đóng khi click đáp án');
+            }
         } else {
             body.classList.remove('pinned');
             pinBtn.classList.remove('pinned');
             pinBtn.title = 'Ghim popup';
             pinBtn.textContent = '📌'; // Icon bình thường
-            this.addLogMessage('📌 Đã bỏ ghim popup - sẽ tự đóng sau khi click đáp án');
+            if (forceState === null) { // Only log when user manually toggles
+                this.addLogMessage('📌 Đã bỏ ghim popup - sẽ tự đóng sau khi click đáp án');
+            }
+        }
+        
+        // Persist to storage
+        try {
+            chrome.storage.local.set({ pinned: this.isPinned });
+        } catch (e) {
+            console.warn('[VanDap Popup] Could not persist pin state:', e);
         }
     }
 

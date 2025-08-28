@@ -22,14 +22,22 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         
         try {
             // Đợi một chút để content script load xong
-            setTimeout(() => {
-                // Tự động mở popup
-                chrome.action.openPopup();
-                console.log('[VanDap Background] Auto-opened popup for vấn đáp page');
+            setTimeout(async () => {
+                try {
+                    // Tự động mở popup
+                    await chrome.action.openPopup();
+                    console.log('[VanDap Background] Auto-opened popup for vấn đáp page');
+                } catch (error) {
+                    console.warn('[VanDap Background] openPopup may require user gesture. Showing badge.');
+                    // Fallback: show badge to indicate extension is ready
+                    chrome.action.setBadgeText({ text: '!', tabId: tabId });
+                    chrome.action.setBadgeBackgroundColor({ color: '#FF6B6B' });
+                    console.log('[VanDap Background] Set badge as fallback');
+                }
             }, 1000);
             
         } catch (error) {
-            console.error('[VanDap Background] Error auto-opening popup:', error);
+            console.error('[VanDap Background] Error in auto-popup setup:', error);
         }
     }
 });
@@ -49,9 +57,16 @@ chrome.tabs.onActivated.addListener(async (activeInfo) => {
             console.log('[VanDap Background] Activated vấn đáp tab:', tab.url);
             
             // Đợi một chút rồi mở popup
-            setTimeout(() => {
-                chrome.action.openPopup();
-                console.log('[VanDap Background] Auto-opened popup for activated vấn đáp tab');
+            setTimeout(async () => {
+                try {
+                    await chrome.action.openPopup();
+                    console.log('[VanDap Background] Auto-opened popup for activated vấn đáp tab');
+                } catch (error) {
+                    console.warn('[VanDap Background] Could not auto-open popup (user gesture required)');
+                    // Show badge as indicator
+                    chrome.action.setBadgeText({ text: '!', tabId: activeInfo.tabId });
+                    chrome.action.setBadgeBackgroundColor({ color: '#4CAF50' });
+                }
             }, 500);
         }
     } catch (error) {

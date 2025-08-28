@@ -3,7 +3,7 @@
   "name": "HH3D Vấn Đáp Helper",
   "version": "1.0",
   "description": "Extension hỗ trợ tự động giải vấn đáp HoatHinh3D",
-  "permissions": ["activeTab", "scripting", "storage"],
+  "permissions": ["activeTab", "scripting", "storage", "tabs"],
   "action": {
     "default_popup": "popup.html",
     "default_icon": {
