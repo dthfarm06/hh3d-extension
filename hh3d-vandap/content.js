@@ -30,17 +30,31 @@ class VanDapHelper {
 
     // Kiểm tra xem có phải trang vấn đáp không
     isVanDapPage() {
+        const currentUrl = window.location.href;
+        console.log('[VanDap Helper] Checking URL:', currentUrl);
+        
         if (this.isTestMode) {
-            return window.location.href.includes('mock-vandap.html');
+            return currentUrl.includes('mock-vandap.html') || currentUrl.includes('test-vandap.html');
         } else {
-            return window.location.href.includes('hoathinh3d.mx/van-dap-tong-mon');
+            // Kiểm tra nhiều pattern URL khác nhau
+            const vanDapPatterns = [
+                'hoathinh3d.mx/van-dap-tong-mon',
+                'hoathinh3d.mx/van-dap',
+                '/van-dap-tong-mon',
+                '/van-dap'
+            ];
+            
+            return vanDapPatterns.some(pattern => currentUrl.includes(pattern));
         }
     }
 
     // Khởi tạo
     init() {
+        // Luôn luôn monitor URL changes, không chỉ trên trang vấn đáp
+        this.startUrlMonitoring();
+        
         if (!this.isVanDapPage()) {
-            console.log('[VanDap Helper] Not on vấn đáp page, skipping initialization');
+            console.log('[VanDap Helper] Not on vấn đáp page, but monitoring URL changes');
             return;
         }
 
@@ -54,9 +68,90 @@ class VanDapHelper {
         }
     }
 
+    // Monitor URL changes cho SPA navigation
+    startUrlMonitoring() {
+        let currentUrl = window.location.href;
+        
+        // Override pushState và replaceState
+        const originalPushState = history.pushState;
+        const originalReplaceState = history.replaceState;
+        
+        history.pushState = function(...args) {
+            originalPushState.apply(history, args);
+            setTimeout(() => vanDapHelper.handleUrlChange(), 100);
+        };
+        
+        history.replaceState = function(...args) {
+            originalReplaceState.apply(history, args);
+            setTimeout(() => vanDapHelper.handleUrlChange(), 100);
+        };
+        
+        // Listen for popstate (back/forward buttons)
+        window.addEventListener('popstate', () => {
+            setTimeout(() => vanDapHelper.handleUrlChange(), 100);
+        });
+        
+        // Polling fallback để catch mọi URL changes
+        setInterval(() => {
+            if (window.location.href !== currentUrl) {
+                currentUrl = window.location.href;
+                this.handleUrlChange();
+            }
+        }, 1000);
+        
+        console.log('[VanDap Helper] Started URL monitoring');
+    }
+
+    // Xử lý khi URL thay đổi
+    handleUrlChange() {
+        const wasVanDapPage = this.isActive;
+        const isNowVanDapPage = this.isVanDapPage();
+        
+        console.log('[VanDap Helper] URL changed. Was vấn đáp:', wasVanDapPage, 'Now vấn đáp:', isNowVanDapPage);
+        
+        if (!wasVanDapPage && isNowVanDapPage) {
+            // Vừa vào trang vấn đáp
+            console.log('[VanDap Helper] Entered vấn đáp page, initializing...');
+            this.setup();
+        } else if (wasVanDapPage && !isNowVanDapPage) {
+            // Vừa rời trang vấn đáp
+            console.log('[VanDap Helper] Left vấn đáp page, cleaning up...');
+            this.cleanup();
+        } else if (isNowVanDapPage) {
+            // Vẫn ở trang vấn đáp nhưng URL thay đổi (có thể là quiz mới)
+            console.log('[VanDap Helper] Still on vấn đáp page, restarting...');
+            this.restartQuiz();
+        }
+    }
+
+    // Cleanup khi rời trang
+    cleanup() {
+        this.isActive = false;
+        this.autoMode = false;
+        this.autoClick = false;
+        this.currentQuestion = null;
+        this.currentAnswer = null;
+        this.questionCount = 0;
+        
+        if (this.observer) {
+            this.observer.disconnect();
+            this.observer = null;
+        }
+        
+        if (this.questionCheckInterval) {
+            clearInterval(this.questionCheckInterval);
+            this.questionCheckInterval = null;
+        }
+        
+        console.log('[VanDap Helper] Cleaned up');
+    }
+
     // Thiết lập chính
     setup() {
         console.log('[VanDap Helper] Setting up...');
+        
+        // Đánh dấu đã active
+        this.isActive = true;
         
         // Bắt đầu monitor
         this.startMonitoring();
@@ -64,10 +159,10 @@ class VanDapHelper {
         // Bắt đầu kiểm tra câu hỏi định kỳ
         this.startQuestionChecking();
         
-        // Kiểm tra câu hỏi ban đầu
+        // Kiểm tra câu hỏi ban đầu với delay lớn hơn để DOM load xong
         setTimeout(() => {
             this.checkForNewQuestion();
-        }, 1000);
+        }, 2000);
     }
 
     // Bắt đầu kiểm tra câu hỏi định kỳ
@@ -119,12 +214,22 @@ class VanDapHelper {
     // Phát hiện câu hỏi hiện tại
     detectCurrentQuestion() {
         let questionText = null;
+        let foundElement = null;
+        
+        console.log('[VanDap Helper] Detecting question...');
         
         if (this.isTestMode) {
             // Test mode selectors
-            const questionElement = document.querySelector('#question');
-            if (questionElement && questionElement.textContent.trim()) {
-                questionText = questionElement.textContent.trim();
+            const selectors = ['#question', 'h2', '.question'];
+            
+            for (let selector of selectors) {
+                const element = document.querySelector(selector);
+                if (element && element.textContent.trim()) {
+                    questionText = element.textContent.trim();
+                    foundElement = element;
+                    console.log(`[VanDap Helper] Found question with selector "${selector}":`, questionText);
+                    break;
+                }
             }
         } else {
             // Production mode - thử nhiều selector khác nhau
@@ -132,18 +237,59 @@ class VanDapHelper {
                 '#question',
                 '.question-text',
                 '.quiz-question',
-                'h2:contains("?")',
+                '.question',
                 '[class*="question"]',
-                '[id*="question"]'
+                '[id*="question"]',
+                '[class*="quiz"]',
+                '[id*="quiz"]',
+                // Thêm các selector phổ biến khác
+                '.content h2',
+                '.content h3',
+                '.quiz-content',
+                '.question-content',
+                '.quiz-title',
+                // Generic selectors để tìm text có dấu ?
+                'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+                'p', 'div', 'span',
+                '.title', '.heading', '.text'
             ];
             
             for (let selector of selectors) {
-                const element = document.querySelector(selector);
-                if (element && element.textContent.trim() && element.textContent.includes('?')) {
-                    questionText = element.textContent.trim();
-                    break;
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    
+                    for (let element of elements) {
+                        const text = element.textContent.trim();
+                        // Kiểm tra text có chứa dấu ? và đủ dài để là câu hỏi
+                        if (text && text.includes('?') && text.length > 10 && text.length < 500) {
+                            questionText = text;
+                            foundElement = element;
+                            console.log(`[VanDap Helper] Found question with selector "${selector}":`, questionText);
+                            break;
+                        }
+                    }
+                    
+                    if (questionText) break;
+                } catch (error) {
+                    console.log(`[VanDap Helper] Error with selector "${selector}":`, error);
                 }
             }
+        }
+        
+        // Debug: Log tất cả elements có chứa dấu ?
+        if (!questionText) {
+            console.log('[VanDap Helper] No question found, debugging...');
+            const allElements = document.querySelectorAll('*');
+            const elementsWithQuestion = Array.from(allElements)
+                .filter(el => el.textContent.includes('?') && el.textContent.trim().length > 5)
+                .slice(0, 10); // Chỉ log 10 elements đầu
+                
+            console.log('[VanDap Helper] Elements containing "?":', elementsWithQuestion.map(el => ({
+                tag: el.tagName,
+                class: el.className,
+                id: el.id,
+                text: el.textContent.trim().substring(0, 100)
+            })));
         }
         
         return questionText;
@@ -177,61 +323,189 @@ class VanDapHelper {
     getAvailableOptions() {
         let options = [];
         
+        console.log('[VanDap Helper] Detecting options...');
+        
         if (this.isTestMode) {
             // Test mode selectors
-            const optionElements = document.querySelectorAll('.option');
-            options = Array.from(optionElements).map(el => ({
-                element: el,
-                text: el.textContent.trim()
-            }));
+            const selectors = ['.option', 'button.option', '.quiz-option', 'button'];
+            
+            for (let selector of selectors) {
+                const elements = document.querySelectorAll(selector);
+                if (elements.length > 0) {
+                    options = Array.from(elements)
+                        .filter(el => el.textContent.trim().length > 0)
+                        .map(el => ({
+                            element: el,
+                            text: el.textContent.trim()
+                        }));
+                    console.log(`[VanDap Helper] Found ${options.length} options with selector "${selector}"`);
+                    break;
+                }
+            }
         } else {
             // Production mode - thử nhiều selector
             const selectors = [
                 '.option',
                 '.quiz-option',
-                '.answer-option', 
+                '.answer-option',
+                '.choice',
+                '.answer',
                 'button[data-index]',
-                '[class*="option"]'
+                'button[data-answer]',
+                'button[data-option]',
+                '[class*="option"]',
+                '[class*="choice"]',
+                '[class*="answer"]',
+                '[id*="option"]',
+                '[id*="choice"]',
+                '[id*="answer"]',
+                // Generic button selectors
+                'button:not([class*="start"]):not([class*="submit"]):not([class*="next"])',
+                '.quiz-container button',
+                '.question-container button',
+                '.answers button',
+                '.choices button'
             ];
             
             for (let selector of selectors) {
-                const elements = document.querySelectorAll(selector);
-                if (elements.length > 0) {
-                    options = Array.from(elements).map(el => ({
-                        element: el,
-                        text: el.textContent.trim()
-                    }));
-                    break;
+                try {
+                    const elements = document.querySelectorAll(selector);
+                    if (elements.length >= 2) { // Ít nhất 2 options
+                        const validOptions = Array.from(elements)
+                            .filter(el => {
+                                const text = el.textContent.trim();
+                                return text.length > 0 && 
+                                       text.length < 200 && // Không quá dài
+                                       !text.toLowerCase().includes('start') &&
+                                       !text.toLowerCase().includes('submit') &&
+                                       !text.toLowerCase().includes('next');
+                            })
+                            .map(el => ({
+                                element: el,
+                                text: el.textContent.trim()
+                            }));
+                            
+                        if (validOptions.length >= 2) {
+                            options = validOptions;
+                            console.log(`[VanDap Helper] Found ${options.length} options with selector "${selector}"`);
+                            break;
+                        }
+                    }
+                } catch (error) {
+                    console.log(`[VanDap Helper] Error with options selector "${selector}":`, error);
                 }
             }
         }
         
+        // Debug: Nếu không tìm thấy options
+        if (options.length === 0) {
+            console.log('[VanDap Helper] No options found, debugging...');
+            const allButtons = document.querySelectorAll('button');
+            const allClickable = document.querySelectorAll('[onclick], .clickable, [role="button"]');
+            
+            console.log('[VanDap Helper] All buttons:', Array.from(allButtons).map(btn => ({
+                tag: btn.tagName,
+                class: btn.className,
+                id: btn.id,
+                text: btn.textContent.trim().substring(0, 50)
+            })));
+            
+            console.log('[VanDap Helper] All clickable elements:', Array.from(allClickable).map(el => ({
+                tag: el.tagName,
+                class: el.className,
+                id: el.id,
+                text: el.textContent.trim().substring(0, 50)
+            })));
+        }
+        
+        console.log('[VanDap Helper] Final options:', options.map(o => o.text));
         return options;
     }
 
     // Tự động click đáp án
     autoClickAnswer(answer) {
-        if (!answer || !this.autoClick) return false;
+        if (!answer || (!this.autoClick && !this.autoMode)) return false;
         
         const options = this.getAvailableOptions();
         console.log('[VanDap Helper] Available options:', options.map(o => o.text));
+        console.log('[VanDap Helper] Looking for answer:', answer);
         
-        // Tìm option chứa đáp án
-        const targetOption = options.find(option => {
+        // Tìm option chứa đáp án với nhiều strategy
+        let targetOption = null;
+        
+        // Strategy 1: Exact match
+        targetOption = options.find(option => {
             const optionText = option.text.toLowerCase().trim();
             const answerText = answer.toLowerCase().trim();
-            
-            return optionText === answerText || 
-                   optionText.includes(answerText) ||
-                   answerText.includes(optionText);
+            return optionText === answerText;
         });
+        
+        // Strategy 2: Contains match
+        if (!targetOption) {
+            targetOption = options.find(option => {
+                const optionText = option.text.toLowerCase().trim();
+                const answerText = answer.toLowerCase().trim();
+                return optionText.includes(answerText) || answerText.includes(optionText);
+            });
+        }
+        
+        // Strategy 3: Fuzzy match (remove special characters)
+        if (!targetOption) {
+            const cleanAnswer = answer.toLowerCase().replace(/[^\w\s]/g, '').trim();
+            targetOption = options.find(option => {
+                const cleanOption = option.text.toLowerCase().replace(/[^\w\s]/g, '').trim();
+                return cleanOption.includes(cleanAnswer) || cleanAnswer.includes(cleanOption);
+            });
+        }
+        
+        // Strategy 4: Word-by-word match
+        if (!targetOption) {
+            const answerWords = answer.toLowerCase().split(/\s+/).filter(w => w.length > 2);
+            targetOption = options.find(option => {
+                const optionWords = option.text.toLowerCase().split(/\s+/);
+                return answerWords.some(word => optionWords.some(optWord => 
+                    optWord.includes(word) || word.includes(optWord)
+                ));
+            });
+        }
         
         if (targetOption) {
             console.log('[VanDap Helper] Auto-clicking answer:', targetOption.text);
-            targetOption.element.click();
-            return true;
+            
+            // Thử nhiều cách click
+            try {
+                // Method 1: Regular click
+                targetOption.element.click();
+                
+                // Method 2: Dispatch click event
+                setTimeout(() => {
+                    const clickEvent = new MouseEvent('click', {
+                        view: window,
+                        bubbles: true,
+                        cancelable: true
+                    });
+                    targetOption.element.dispatchEvent(clickEvent);
+                }, 100);
+                
+                // Method 3: Focus and trigger
+                setTimeout(() => {
+                    targetOption.element.focus();
+                    if (targetOption.element.onclick) {
+                        targetOption.element.onclick();
+                    }
+                }, 200);
+                
+                return true;
+            } catch (error) {
+                console.error('[VanDap Helper] Error clicking answer:', error);
+                return false;
+            }
         } else {
             console.log('[VanDap Helper] Could not find matching option for answer:', answer);
+            console.log('[VanDap Helper] Available options for comparison:');
+            options.forEach((opt, index) => {
+                console.log(`  ${index + 1}. "${opt.text}"`);
+            });
             return false;
         }
     }
@@ -366,6 +640,45 @@ class VanDapHelper {
             autoClick: this.autoClick,
             autoMode: this.autoMode,
             availableOptions: this.getAvailableOptions().map(o => o.text)
+        };
+    }
+
+    // Debug method để test extension
+    debugExtension() {
+        console.log('=== VanDap Extension Debug ===');
+        console.log('URL:', window.location.href);
+        console.log('Is VanDap Page:', this.isVanDapPage());
+        console.log('Is Test Mode:', this.isTestMode);
+        console.log('Is Active:', this.isActive);
+        console.log('Current Question:', this.currentQuestion);
+        console.log('Current Answer:', this.currentAnswer);
+        console.log('Auto Click:', this.autoClick);
+        console.log('Auto Mode:', this.autoMode);
+        
+        // Test question detection
+        const detectedQuestion = this.detectCurrentQuestion();
+        console.log('Detected Question:', detectedQuestion);
+        
+        // Test options detection
+        const options = this.getAvailableOptions();
+        console.log('Available Options:', options);
+        
+        // Test answer finding
+        if (detectedQuestion) {
+            const answerData = this.findAnswer(detectedQuestion);
+            console.log('Found Answer Data:', answerData);
+        }
+        
+        console.log('=== End Debug ===');
+        
+        return {
+            url: window.location.href,
+            isVanDapPage: this.isVanDapPage(),
+            isTestMode: this.isTestMode,
+            isActive: this.isActive,
+            detectedQuestion,
+            options: options.map(o => o.text),
+            currentState: this.getCurrentState()
         };
     }
 }
@@ -1391,6 +1704,10 @@ let vanDapHelper = null;
 function initVanDapHelper() {
     if (!vanDapHelper) {
         vanDapHelper = new VanDapHelper();
+        // Expose globally để debug
+        window.vanDapHelper = vanDapHelper;
+        console.log('[VanDap Helper] Extension available globally as window.vanDapHelper');
+        console.log('[VanDap Helper] Use vanDapHelper.debugExtension() to debug');
     }
 }
 
@@ -1443,6 +1760,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         case 'refreshQuestion':
             vanDapHelper.checkForNewQuestion();
             sendResponse(vanDapHelper.getCurrentState());
+            break;
+            
+        case 'debugExtension':
+            const debugInfo = vanDapHelper.debugExtension();
+            sendResponse(debugInfo);
             break;
             
         case 'scanPage':

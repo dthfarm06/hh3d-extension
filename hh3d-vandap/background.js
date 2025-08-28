@@ -8,8 +8,8 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Tự động mở popup khi user vào trang vấn đáp
 chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
-    // Chỉ xử lý khi trang đã load xong
-    if (changeInfo.status !== 'complete' || !tab.url) {
+    // Xử lý cả khi trang load xong và khi URL thay đổi
+    if (!tab.url || (changeInfo.status !== 'complete' && !changeInfo.url)) {
         return;
     }
 
@@ -31,6 +31,31 @@ chrome.tabs.onUpdated.addListener(async (tabId, changeInfo, tab) => {
         } catch (error) {
             console.error('[VanDap Background] Error auto-opening popup:', error);
         }
+    }
+});
+
+// Lắng nghe khi user navigate đến tab đã có sẵn
+chrome.tabs.onActivated.addListener(async (activeInfo) => {
+    try {
+        const tab = await chrome.tabs.get(activeInfo.tabId);
+        
+        // Kiểm tra xem có phải trang vấn đáp không
+        const isVanDapPage = tab.url && (
+            tab.url.includes('hoathinh3d.mx/van-dap-tong-mon') || 
+            tab.url.includes('mock-vandap.html')
+        );
+        
+        if (isVanDapPage) {
+            console.log('[VanDap Background] Activated vấn đáp tab:', tab.url);
+            
+            // Đợi một chút rồi mở popup
+            setTimeout(() => {
+                chrome.action.openPopup();
+                console.log('[VanDap Background] Auto-opened popup for activated vấn đáp tab');
+            }, 500);
+        }
+    } catch (error) {
+        console.error('[VanDap Background] Error handling tab activation:', error);
     }
 });
 
