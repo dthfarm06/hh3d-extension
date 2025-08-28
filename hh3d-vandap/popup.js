@@ -43,12 +43,6 @@ class VanDapPopup {
             this.togglePin();
         });
 
-        // Auto-click toggle
-        const autoClickToggle = document.getElementById('autoClickToggle');
-        autoClickToggle?.addEventListener('change', (e) => {
-            this.setAutoClick(e.target.checked);
-        });
-
         // Auto mode toggle
         const autoModeToggle = document.getElementById('autoModeToggle');
         autoModeToggle?.addEventListener('change', (e) => {
@@ -114,7 +108,6 @@ class VanDapPopup {
                             answer: null,
                             questionCount: 0,
                             maxQuestions: 5,
-                            autoClick: false,
                             availableOptions: []
                         });
                         return;
@@ -175,12 +168,6 @@ class VanDapPopup {
             currentAnswer.className = 'current-answer not-found';
             clickAnswerBtn.disabled = true;
             clickAnswerBtn.textContent = '❌ Không có đáp án';
-        }
-
-        // Cập nhật auto-click toggle
-        const autoClickToggle = document.getElementById('autoClickToggle');
-        if (autoClickToggle) {
-            autoClickToggle.checked = state.autoClick;
         }
 
         // Cập nhật auto mode toggle
@@ -279,25 +266,6 @@ class VanDapPopup {
         }
     }
 
-    // Đặt auto-click
-    setAutoClick(enabled) {
-        chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
-            if (tabs[0]) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    action: 'setAutoClick',
-                    enabled: enabled
-                }, (response) => {
-                    if (chrome.runtime.lastError) {
-                        console.error('[VanDap Popup] Error setting auto-click:', chrome.runtime.lastError.message);
-                        return;
-                    }
-                    
-                    this.addLogMessage(`🤖 Tự động click: ${enabled ? 'BẬT' : 'TẮT'}`);
-                });
-            }
-        });
-    }
-
     // Đặt auto mode
     setAutoMode(enabled) {
         chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
@@ -315,13 +283,6 @@ class VanDapPopup {
                     
                     if (enabled) {
                         this.addLogMessage('🎯 Extension sẽ tự động tìm đáp án, click và chuyển câu hỏi tiếp theo');
-                        // Cập nhật auto-click toggle để đồng bộ
-                        const autoClickToggle = document.getElementById('autoClickToggle');
-                        if (autoClickToggle) {
-                            autoClickToggle.checked = true;
-                            const toggleContainer = autoClickToggle.closest('.toggle');
-                            toggleContainer.classList.add('checked');
-                        }
                     }
                 });
             }
@@ -344,16 +305,10 @@ class VanDapPopup {
                     
                     // Cập nhật UI
                     const autoModeToggle = document.getElementById('autoModeToggle');
-                    const autoClickToggle = document.getElementById('autoClickToggle');
                     
                     if (autoModeToggle) {
                         autoModeToggle.checked = false;
                         autoModeToggle.closest('.toggle').classList.remove('checked');
-                    }
-                    
-                    if (autoClickToggle) {
-                        autoClickToggle.checked = false;
-                        autoClickToggle.closest('.toggle').classList.remove('checked');
                     }
                 });
             }
@@ -471,7 +426,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 answer: request.answer,
                 questionCount: request.questionCount,
                 maxQuestions: request.maxQuestions,
-                autoClick: false, // Sẽ được cập nhật từ state
                 availableOptions: request.availableOptions || []
             });
         }

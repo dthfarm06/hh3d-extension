@@ -11,10 +11,12 @@ class VanDapHelper {
         this.observer = null;
         this.autoMode = false; // Chế độ tự động hoàn toàn
         this.autoClickDelay = 1000; // Delay trước khi click (ms)
-        this.nextQuestionDelay = 2000; // Delay chờ câu hỏi tiếp theo (ms)
+        this.nextQuestionDelay = 1000; // Delay chờ câu hỏi tiếp theo sau khi click (ms) - UPDATED: giảm xuống 1s
         this.lastQuestionTime = 0; // Thời gian câu hỏi cuối
         this.questionCheckInterval = null; // Interval check câu hỏi
         this.lastQuestionHash = null; // Hash of last processed question to avoid duplicates
+        this.processedQuestions = new Set(); // Set để track câu hỏi đã xử lý - ADDED
+        this.isProcessing = false; // Flag để tránh xử lý đồng thời - ADDED
         
         this.log('info', `Initialized in ${this.isTestMode ? 'TEST' : 'PROD'} mode`);
         this.log('info', `URL: ${window.location.href}`);
@@ -162,7 +164,9 @@ class VanDapHelper {
         }
     }
 
-    // Cleanup khi rời trang
+    /**
+     * Cleanup khi rời trang với reset memory
+     */
     cleanup() {
         this.isActive = false;
         this.autoMode = false;
@@ -170,6 +174,10 @@ class VanDapHelper {
         this.currentQuestion = null;
         this.currentAnswer = null;
         this.questionCount = 0;
+        this.isProcessing = false;
+        
+        // Clear processed questions memory
+        this.processedQuestions.clear();
         
         if (this.observer) {
             this.observer.disconnect();
@@ -548,39 +556,120 @@ class VanDapHelper {
         }
     }
 
-    // Kiểm tra câu hỏi mới
+    /**
+     * Kiểm tra câu hỏi mới với logic tránh duplicate và limit 5 câu
+     */
     checkForNewQuestion() {
+        // Kiểm tra xem đã đủ 5 câu hỏi chưa
+        if (this.questionCount >= this.maxQuestions) {
+            this.log('info', `Đã hoàn thành ${this.maxQuestions} câu hỏi. Dừng auto mode.`);
+            this.stopAutoMode();
+            return;
+        }
+
+        // Kiểm tra xem đang xử lý câu hỏi không
+        if (this.isProcessing) {
+            return;
+        }
+
         const currentQuestion = this.detectCurrentQuestion();
         
-        if (!currentQuestion || currentQuestion === this.currentQuestion) {
-            return; // Không có câu hỏi mới
+        if (!currentQuestion) {
+            return; // Không phát hiện được câu hỏi
+        }
+
+        // Tạo hash để so sánh câu hỏi
+        const questionHash = this.createQuestionHash(currentQuestion);
+        
+        // Kiểm tra câu hỏi đã được xử lý chưa
+        if (this.processedQuestions.has(questionHash)) {
+            return; // Câu hỏi đã được xử lý rồi
+        }
+
+        // Kiểm tra nếu giống câu hỏi hiện tại
+        if (currentQuestion === this.currentQuestion) {
+            return; // Vẫn là câu hỏi cũ
         }
         
-        console.log('[VanDap Helper] New question detected:', currentQuestion);
+        this.log('info', `New question detected (${this.questionCount + 1}/${this.maxQuestions}):`, currentQuestion);
         
+        // Đánh dấu đang xử lý
+        this.isProcessing = true;
+        
+        // Cập nhật thông tin câu hỏi
         this.currentQuestion = currentQuestion;
         this.questionCount++;
         this.lastQuestionTime = Date.now();
+        
+        // Thêm vào set câu hỏi đã xử lý
+        this.processedQuestions.add(questionHash);
         
         // Tìm đáp án
         const answerData = this.findAnswer(currentQuestion);
         this.currentAnswer = answerData ? answerData.dap_an : null;
         
-        console.log('[VanDap Helper] Found answer:', this.currentAnswer);
+        this.log('info', 'Found answer:', this.currentAnswer);
         
         // Gửi update lên popup
         this.sendUpdateToPopup();
         
-        // Auto-click nếu được bật hoặc ở chế độ auto
-        if (this.currentAnswer && (this.autoClick || this.autoMode)) {
+        // Auto-click nếu ở chế độ auto mode
+        if (this.currentAnswer && this.autoMode) {
             setTimeout(() => {
                 const success = this.autoClickAnswer(this.currentAnswer);
-                if (success && this.autoMode) {
-                    // Nếu ở chế độ auto và click thành công, chờ câu hỏi tiếp theo
-                    this.waitForNextQuestion();
+                if (success) {
+                    this.log('info', `Auto-clicked answer: ${this.currentAnswer}`);
+                    
+                    // Đợi 1s sau khi click để load câu hỏi tiếp theo
+                    setTimeout(() => {
+                        this.isProcessing = false; // Cho phép xử lý câu hỏi tiếp theo
+                        this.log('info', 'Ready for next question after 1s delay');
+                        
+                        // Nếu đã đủ 5 câu thì dừng
+                        if (this.questionCount >= this.maxQuestions) {
+                            this.log('info', 'Quiz completed! Stopping auto mode.');
+                            this.stopAutoMode();
+                        }
+                    }, this.nextQuestionDelay); // 1s delay
+                } else {
+                    this.isProcessing = false;
+                    this.log('warn', 'Failed to auto-click answer');
                 }
-            }, this.autoClickDelay);
+            }, this.autoClickDelay); // Delay trước khi click
+        } else {
+            this.isProcessing = false; // Không auto-click thì cho phép xử lý tiếp
         }
+    }
+
+    /**
+     * Tạo hash cho câu hỏi để so sánh
+     * @param {string} question - Câu hỏi cần hash
+     * @returns {string} Hash của câu hỏi
+     */
+    createQuestionHash(question) {
+        const cleanQuestion = question.trim().toLowerCase();
+        let hash = 0;
+        for (let i = 0; i < cleanQuestion.length; i++) {
+            const char = cleanQuestion.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32bit integer
+        }
+        return Math.abs(hash).toString(36);
+    }
+
+    /**
+     * Làm mới để detect lại tab hiện tại
+     */
+    refreshCurrentPage() {
+        this.log('info', 'Refreshing current page detection...');
+        
+        // Force check lại page hiện tại
+        this.isProcessing = false;
+        
+        // Kiểm tra ngay lập tức
+        this.checkForNewQuestion();
+        
+        this.log('info', 'Page refresh completed');
     }
 
     // Chờ câu hỏi tiếp theo trong chế độ auto
@@ -612,33 +701,33 @@ class VanDapHelper {
         });
     }
 
-    // Kích hoạt/tắt auto-click
-    setAutoClick(enabled) {
-        this.autoClick = enabled;
-        console.log('[VanDap Helper] Auto-click:', enabled ? 'ENABLED' : 'DISABLED');
-    }
+    // REMOVED: setAutoClick method - không còn cần thiết
 
-    // Kích hoạt/tắt chế độ auto hoàn toàn
+    /**
+     * Kích hoạt/tắt chế độ auto hoàn toàn
+     * @param {boolean} enabled - Bật/tắt auto mode
+     */
     setAutoMode(enabled) {
         this.autoMode = enabled;
-        console.log('[VanDap Helper] Auto mode:', enabled ? 'ENABLED' : 'DISABLED');
+        this.log('info', 'Auto mode:', enabled ? 'ENABLED' : 'DISABLED');
         
         if (enabled) {
-            // Bật auto-click cùng với auto mode
-            this.autoClick = true;
-            // Nếu đã có câu hỏi và đáp án, bắt đầu ngay
-            if (this.currentQuestion && this.currentAnswer) {
-                setTimeout(() => {
-                    const success = this.autoClickAnswer(this.currentAnswer);
-                    if (success) {
-                        this.waitForNextQuestion();
-                    }
-                }, this.autoClickDelay);
-            }
+            // Reset trạng thái để bắt đầu fresh
+            this.isProcessing = false;
+            
+            // Bắt đầu kiểm tra câu hỏi
+            setTimeout(() => {
+                this.checkForNewQuestion();
+            }, 1000);
+        } else {
+            // Dừng auto mode
+            this.isProcessing = false;
         }
     }
 
-    // Manually click answer
+    /**
+     * Manually click answer
+     */
     clickAnswerManually() {
         if (this.currentAnswer) {
             return this.autoClickAnswer(this.currentAnswer);
@@ -653,18 +742,33 @@ class VanDapHelper {
         console.log('[VanDap Helper] All automation stopped');
     }
 
-    // Khởi động lại từ đầu
+    /**
+     * Khởi động lại từ đầu với việc reset bộ nhớ hoàn toàn
+     */
     restartQuiz() {
+        this.log('info', 'Restarting quiz - clearing all memory...');
+        
+        // Reset tất cả thông tin
         this.questionCount = 0;
         this.currentQuestion = null;
         this.currentAnswer = null;
         this.lastQuestionTime = 0;
-        console.log('[VanDap Helper] Quiz restarted');
+        this.isProcessing = false;
         
-        // Kiểm tra câu hỏi ngay lập tức
-        setTimeout(() => {
-            this.checkForNewQuestion();
-        }, 500);
+        // IMPORTANT: Clear processed questions memory
+        this.processedQuestions.clear();
+        
+        this.log('info', 'Quiz restarted - memory cleared');
+        
+        // Gửi update lên popup
+        this.sendUpdateToPopup();
+        
+        // Kiểm tra câu hỏi ngay lập tức nếu ở chế độ auto
+        if (this.autoMode) {
+            setTimeout(() => {
+                this.checkForNewQuestion();
+            }, 1000);
+        }
     }
 
     // Get current state
@@ -675,9 +779,10 @@ class VanDapHelper {
             answer: this.currentAnswer,
             questionCount: this.questionCount,
             maxQuestions: this.maxQuestions,
-            autoClick: this.autoClick,
             autoMode: this.autoMode,
-            availableOptions: this.getAvailableOptions().map(o => o.text)
+            availableOptions: this.getAvailableOptions().map(o => o.text),
+            isProcessing: this.isProcessing, // ADDED: để hiển thị trạng thái processing
+            processedCount: this.processedQuestions.size // ADDED: số câu đã xử lý
         };
     }
 
@@ -690,8 +795,9 @@ class VanDapHelper {
         console.log('Is Active:', this.isActive);
         console.log('Current Question:', this.currentQuestion);
         console.log('Current Answer:', this.currentAnswer);
-        console.log('Auto Click:', this.autoClick);
         console.log('Auto Mode:', this.autoMode);
+        console.log('Is Processing:', this.isProcessing);
+        console.log('Processed Questions:', this.processedQuestions.size);
         
         // Test question detection
         const detectedQuestion = this.detectCurrentQuestion();
@@ -1775,10 +1881,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 sendResponse(vanDapHelper.getCurrentState());
                 return; // sync response
                 
-            case 'setAutoClick':
-                vanDapHelper.setAutoClick(!!request.enabled);
-                sendResponse({ success: true });
-                return;
+            // REMOVED: setAutoClick action - không còn cần thiết
                 
             case 'setAutoMode':
                 vanDapHelper.setAutoMode(!!request.enabled);
@@ -1791,7 +1894,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                 return;
                 
             case 'refreshQuestion':
-                vanDapHelper.checkForNewQuestion();
+                vanDapHelper.refreshCurrentPage(); // UPDATED: sử dụng method mới
                 sendResponse({ success: true });
                 return;
                 
