@@ -1,5 +1,5 @@
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  // TẾ LỄ (đã có)
+  // TẾ LỄ
   if (request.action === "clickTeLeButton") {
     try {
       const firstBtn =
@@ -29,7 +29,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
     return true; // async
 
-  // ĐIỂM DANH (mới)
+  // ĐIỂM DANH
   } else if (request.action === "clickCheckInButton") {
     try {
       const start = Date.now();

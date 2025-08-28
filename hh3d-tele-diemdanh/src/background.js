@@ -38,7 +38,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   (async () => {
     try {
       if (request.action === "openAndClick") {
-        // TẾ LỄ (giữ nguyên logic bạn đang dùng)
+        // TẾ LỄ
         const url = request.url;
         const tab = await chrome.tabs.create({ url });
         await waitForTabCompleted(tab.id, url, 30000);
@@ -47,7 +47,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ ok: true, ...res });
 
       } else if (request.action === "checkInCurrentTab") {
-        // ĐIỂM DANH (mới) – mở trong tab hiện tại
+        // ĐIỂM DANH
         const url = request.url;
         const tabId = await getActiveTabId();
         await chrome.tabs.update(tabId, { url }); // mở URL trong tab hiện tại
