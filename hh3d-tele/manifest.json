@@ -1,31 +1,32 @@
 {
   "manifest_version": 3,
   "name": "Tế Lễ Extension",
-  "version": "1.1.0",
-  "description": "Automate clicking the 'Tế Lễ' button on a specific page (MV3).",
+  "version": "1.2.0",
+  "description": "Automate 'Tế Lễ' and 'Điểm Danh' (MV3).",
+
   "action": {
     "default_popup": "src/popup.html",
     "default_icon": "assets/icons/icon48.png"
   },
+
   "background": {
     "service_worker": "src/background.js"
   },
-  "permissions": [
-    "tabs",
-    "scripting",
-    "webNavigation",
-    "storage"
-  ],
-  "host_permissions": [
-    "https://hoathinh3d.mx/*"
-  ],
+
+  "permissions": ["tabs", "scripting", "webNavigation", "storage"],
+  "host_permissions": ["https://hoathinh3d.mx/*"],
+
   "content_scripts": [
     {
-      "matches": ["https://hoathinh3d.mx/danh-sach-thanh-vien-tong-mon*"],
+      "matches": [
+        "https://hoathinh3d.mx/danh-sach-thanh-vien-tong-mon*",
+        "https://hoathinh3d.mx/diem-danh*"
+      ],
       "js": ["src/content.js"],
       "run_at": "document_idle"
     }
   ],
+
   "icons": {
     "16": "assets/icons/icon16.png",
     "48": "assets/icons/icon48.png",
