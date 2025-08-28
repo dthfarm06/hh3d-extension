@@ -1,0 +1,933 @@
+<!doctype html>
+<html lang="vi">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Bí Cảnh Tông Môn – Boss UI</title>
+
+    <!-- Font & Icons (chỉ để hiển thị đẹp, không đổi selector HTML) -->
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet" />
+
+    <style>
+        :root {
+            --bg: #0b0f14;
+            --card: rgba(18, 24, 31, 0.75);
+            --card-border: rgba(255, 255, 255, 0.08);
+            --text: #e8eef6;
+            --muted: #a9b6c7;
+            --accent: #7cc0ff;
+            --accent-strong: #5ab1ff;
+            --warning: #ffd166;
+            --danger: #ff6b6b;
+            --success: #22c55e;
+            --gem: #8efcf3;
+            --gold: #ffdd6e;
+            --shadow: 0 10px 30px rgba(0, 0, 0, .35);
+            --radius-xl: 20px;
+            --radius-lg: 16px;
+            --radius-md: 12px;
+            --radius-sm: 10px;
+            --glass: blur(10px);
+        }
+
+        /* ========== Base ========== */
+        * {
+            box-sizing: border-box;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            color: var(--text);
+            background: radial-gradient(1000px 600px at 15% 10%, #123 0%, #0b0f14 45%, #06090d 100%) no-repeat fixed,
+                linear-gradient(135deg, #0b0f14, #0e141b) fixed;
+            font-family: "Be Vietnam Pro", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+        }
+
+        body::before {
+            /* ánh sáng nền động nhẹ */
+            content: "";
+            position: fixed;
+            inset: -20vmax;
+            background: radial-gradient(40vmax 40vmax at 70% -10%, rgba(93, 163, 255, .12), transparent 60%),
+                radial-gradient(35vmax 35vmax at 10% 110%, rgba(58, 255, 193, .08), transparent 60%);
+            z-index: -1;
+            animation: floatGlow 18s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatGlow {
+            0% {
+                transform: translateY(0)
+            }
+
+            100% {
+                transform: translateY(-2%)
+            }
+        }
+
+        .boss-game-container {
+            max-width: 1100px;
+            margin: 40px auto;
+            padding: 24px;
+            border-radius: var(--radius-xl);
+            border: 1px solid var(--card-border);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+            backdrop-filter: var(--glass);
+            box-shadow: var(--shadow);
+        }
+
+        /* ========== Title & Guild Info ========== */
+        .game-title {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 18px;
+            padding: 12px 14px;
+            border-radius: var(--radius-lg);
+            border: 1px solid var(--card-border);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .01));
+        }
+
+        .game-title h1 {
+            margin: 0;
+            font-size: 28px;
+            font-weight: 800;
+            letter-spacing: .3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 2px 18px rgba(124, 192, 255, .35);
+        }
+
+        .game-title h1 i {
+            font-size: 26px;
+            color: var(--accent);
+            filter: drop-shadow(0 0 10px rgba(90, 177, 255, .35));
+        }
+
+        .guild-info {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            flex-wrap: wrap;
+        }
+
+        .guild-name {
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid var(--card-border);
+            background: linear-gradient(135deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+            font-weight: 700;
+            letter-spacing: .2px;
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .03);
+            white-space: nowrap;
+        }
+
+        /* bạn có class bang-hoi-mau-liet-diem-hoang – ta làm hiệu ứng lửa nhẹ */
+        .bang-hoi-mau-liet-diem-hoang {
+            background: linear-gradient(95deg, rgba(255, 120, 70, .12), rgba(255, 226, 137, .10));
+            border-color: rgba(255, 190, 120, .25);
+            text-shadow: 0 2px 6px rgba(255, 160, 90, .25);
+        }
+
+        .tinh-thach-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(142, 252, 243, .25);
+            background: linear-gradient(95deg, rgba(142, 252, 243, .10), rgba(124, 192, 255, .10));
+            box-shadow: inset 0 0 0 1px rgba(142, 252, 243, .08), 0 8px 22px rgba(124, 192, 255, .12);
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .tinh-thach-display i {
+            color: var(--gem);
+        }
+
+        .tinh-thach-amount {
+            color: var(--gem);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .tinh-thach-label {
+            color: var(--muted);
+            font-weight: 600;
+        }
+
+        /* ========== Boss Section Layout ========== */
+        #boss-status-container {
+            margin-top: 12px;
+        }
+
+        .boss-active-section {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 16px;
+        }
+
+        @media (min-width: 860px) {
+            .boss-active-section {
+                grid-template-columns: 260px 1fr;
+                align-items: stretch;
+            }
+        }
+
+        /* Timer Card */
+        .boss-timer-section {
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 110px;
+        }
+
+        .boss-timer {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: 800;
+            font-size: 20px;
+            letter-spacing: .4px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(124, 192, 255, .25);
+            background: linear-gradient(95deg, rgba(90, 177, 255, .12), rgba(142, 252, 243, .10));
+            box-shadow: inset 0 0 0 1px rgba(124, 192, 255, .10), 0 6px 20px rgba(124, 192, 255, .15);
+        }
+
+        .boss-timer i {
+            color: var(--accent-strong);
+            filter: drop-shadow(0 0 8px rgba(90, 177, 255, .35));
+        }
+
+        #boss-timer-text {
+            font-variant-numeric: tabular-nums;
+        }
+
+        /* Boss Content Card */
+        .boss-content {
+            border: 1px solid var(--card-border);
+            border-radius: var(--radius-lg);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .015));
+            padding: 16px;
+            box-shadow: var(--shadow);
+        }
+
+        .boss-image-container {
+            border-radius: var(--radius-md);
+            border: 1px solid var(--card-border);
+            background: radial-gradient(400px 180px at 50% 20%, rgba(124, 192, 255, .16), transparent 60%),
+                linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+            padding: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 220px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .boss-image-container::after {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(240px 120px at 70% 20%, rgba(255, 255, 255, .06), transparent 60%);
+            pointer-events: none;
+        }
+
+        .boss-image {
+            max-width: 100%;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 14px 28px rgba(0, 0, 0, .6));
+            transform: translateZ(0);
+            animation: floatY 4.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes floatY {
+            0% {
+                transform: translateY(0)
+            }
+
+            100% {
+                transform: translateY(-6px)
+            }
+        }
+
+        .boss-info {
+            display: grid;
+            gap: 12px;
+            padding: 8px 2px 2px;
+        }
+
+        .boss-name {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 800;
+            letter-spacing: .3px;
+            text-shadow: 0 2px 14px rgba(255, 255, 255, .08);
+        }
+
+        .boss-details {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .boss-detail-item {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 221, 110, .28);
+            color: var(--gold);
+            background: linear-gradient(95deg, rgba(255, 221, 110, .15), rgba(255, 255, 255, .05));
+            font-weight: 700;
+        }
+
+        .boss-detail-item i {
+            filter: drop-shadow(0 0 8px rgba(255, 221, 110, .4));
+        }
+
+        .boss-rewards-info-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 10px 14px;
+            border-radius: 999px;
+            border: 1px solid rgba(142, 252, 243, .28);
+            background: linear-gradient(95deg, rgba(142, 252, 243, .12), rgba(124, 192, 255, .12));
+            color: var(--text);
+            font-weight: 800;
+            letter-spacing: .2px;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease;
+        }
+
+        .boss-rewards-info-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(124, 192, 255, .18);
+        }
+
+        /* HP Bar */
+        .hp-bar-container {
+            margin-top: 6px;
+        }
+
+        .hp-bar {
+            position: relative;
+            width: 100%;
+            height: 16px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, .15);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+            overflow: hidden;
+            box-shadow: inset 0 2px 8px rgba(0, 0, 0, .4);
+        }
+
+        .hp-fill {
+            height: 100%;
+            border-radius: 999px;
+            background:
+                repeating-linear-gradient(135deg, rgba(255, 255, 255, .18) 0 10px, rgba(255, 255, 255, 0) 10px 20px),
+                linear-gradient(90deg, #3bf58e, #ffd166, #ff6b6b);
+            background-size: 200% 100%;
+            animation: hpStripe 1.8s linear infinite, hpGlow 6s ease-in-out infinite alternate;
+            box-shadow: 0 0 18px rgba(59, 245, 142, .45);
+        }
+
+        @keyframes hpStripe {
+            0% {
+                background-position: 0 0, 0 0
+            }
+
+            100% {
+                background-position: 200% 0, 0 0
+            }
+        }
+
+        @keyframes hpGlow {
+            0% {
+                filter: drop-shadow(0 0 6px rgba(59, 245, 142, .35))
+            }
+
+            100% {
+                filter: drop-shadow(0 0 10px rgba(255, 107, 107, .45))
+            }
+        }
+
+        .hp-percentage {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            place-items: center;
+            font-size: 12px;
+            font-weight: 800;
+            color: #0a1117;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, .35);
+            mix-blend-mode: screen;
+        }
+
+        .boss-summoner {
+            color: var(--muted);
+            font-size: 14px;
+            margin-top: 6px;
+        }
+
+        .boss-summoner span {
+            color: var(--text);
+            font-weight: 700;
+            text-shadow: 0 1px 0 rgba(255, 255, 255, .08);
+        }
+
+        /* Right side actions */
+        .boss-actions {
+            display: grid;
+            gap: 12px;
+            align-content: start;
+        }
+
+        .challenge-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid rgba(90, 177, 255, .35);
+            background: linear-gradient(95deg, rgba(90, 177, 255, .18), rgba(142, 252, 243, .14));
+            color: var(--text);
+            font-weight: 900;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease, opacity .2s ease;
+            box-shadow: 0 10px 24px rgba(124, 192, 255, .16);
+        }
+
+        .challenge-btn i {
+            filter: drop-shadow(0 0 8px rgba(90, 177, 255, .45));
+        }
+
+        .challenge-btn:not(.disabled) i.fa-sword {
+            color: var(--success);
+            filter: drop-shadow(0 0 8px rgba(34, 197, 94, .45));
+        }
+
+        .challenge-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 14px 30px rgba(124, 192, 255, .22);
+        }
+
+        .challenge-btn.disabled,
+        .challenge-btn[disabled] {
+            cursor: not-allowed;
+            opacity: .65;
+            border-color: rgba(255, 255, 255, .12);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+            box-shadow: none;
+        }
+
+        .attack-info-display {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 12px;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 221, 110, .25);
+            background: linear-gradient(95deg, rgba(255, 221, 110, .12), rgba(255, 255, 255, .04));
+            color: var(--gold);
+            font-weight: 800;
+            width: fit-content;
+        }
+
+        .attack-info-display .attack-count {
+            color: var(--text);
+        }
+
+        .boss-info-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+        }
+
+        .info-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 12px;
+            border-radius: 12px;
+            border: 1px solid var(--card-border);
+            background: linear-gradient(180deg, rgba(255, 255, 255, .05), rgba(255, 255, 255, .01));
+            color: var(--text);
+            font-weight: 700;
+            cursor: pointer;
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        }
+
+        .info-btn:hover {
+            transform: translateY(-1px);
+            border-color: rgba(124, 192, 255, .35);
+            box-shadow: 0 8px 18px rgba(124, 192, 255, .15);
+        }
+
+        /* Two-column layout inside .boss-content (image | info+actions) */
+        .boss-content .boss-image-container+.boss-info {
+            margin-top: 12px;
+        }
+
+        @media (min-width: 860px) {
+            .boss-content {
+                display: grid;
+                grid-template-columns: 320px 1fr;
+                gap: 18px;
+            }
+
+            .boss-content .boss-image-container {
+                min-height: 300px;
+            }
+        }
+
+        /* ========== Boss Damage Screen Popup ========== */
+        #boss-damage-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        #boss-damage-screen.show {
+            display: flex;
+        }
+
+        #boss-damage-screen .boss-image {
+            max-width: 400px;
+            max-height: 400px;
+            width: auto;
+            height: auto;
+            object-fit: contain;
+            filter: drop-shadow(0 20px 40px rgba(0, 0, 0, .8));
+            animation: battleFloat 3s ease-in-out infinite alternate;
+            margin-bottom: 40px;
+        }
+
+        @keyframes battleFloat {
+            0% {
+                transform: translateY(0) scale(1);
+            }
+            100% {
+                transform: translateY(-10px) scale(1.02);
+            }
+        }
+
+        .battle-buttons-container {
+            display: flex;
+            gap: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .attack-button, .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 24px;
+            border-radius: 12px;
+            border: 1px solid;
+            font-weight: 900;
+            letter-spacing: .3px;
+            text-transform: uppercase;
+            cursor: pointer;
+            transition: all .15s ease;
+            font-family: inherit;
+            font-size: 16px;
+            min-width: 160px;
+            justify-content: center;
+        }
+
+        .attack-button {
+            background: linear-gradient(95deg, rgba(255, 107, 107, .18), rgba(255, 221, 110, .14));
+            border-color: rgba(255, 107, 107, .35);
+            color: var(--text);
+            box-shadow: 0 10px 24px rgba(255, 107, 107, .16);
+        }
+
+        .attack-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(255, 107, 107, .22);
+            background: linear-gradient(95deg, rgba(255, 107, 107, .25), rgba(255, 221, 110, .20));
+        }
+
+        .attack-button i {
+            filter: drop-shadow(0 0 8px rgba(255, 107, 107, .45));
+        }
+
+        .back-button {
+            background: linear-gradient(95deg, rgba(169, 182, 199, .18), rgba(255, 255, 255, .14));
+            border-color: rgba(169, 182, 199, .35);
+            color: var(--muted);
+            box-shadow: 0 10px 24px rgba(169, 182, 199, .16);
+        }
+
+        .back-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 14px 30px rgba(169, 182, 199, .22);
+            background: linear-gradient(95deg, rgba(169, 182, 199, .25), rgba(255, 255, 255, .20));
+            color: var(--text);
+        }
+
+        .back-button i {
+            filter: drop-shadow(0 0 8px rgba(169, 182, 199, .45));
+        }
+    </style>
+</head>
+
+<body>
+
+    <!-- ======= GIỮ NGUYÊN HTML CỦA BẠN TỪ ĐÂY ======= -->
+    <div class="boss-game-container">
+        <div class="game-title">
+            <h1> <i class="fas fa-dragon"></i> Bí Cảnh Tông Môn</h1>
+            <div class="guild-info">
+                <div class="guild-name bang-hoi-mau-liet-diem-hoang"> Huyết Thần Giáo</div>
+                <div class="tinh-thach-display"> <i class="fas fa-gem"></i> <span
+                        class="tinh-thach-amount">66,192</span> <span class="tinh-thach-label">Tinh Thạch</span></div>
+            </div>
+        </div>
+        <div id="boss-status-container">
+            <div class="boss-active-section">
+                <div class="boss-timer-section">
+                    <div class="boss-timer">
+                        <i class="fas fa-clock"></i>
+                        <span id="boss-timer-text">25:19:24</span>
+                    </div>
+                </div>
+
+                <div class="boss-content">
+                    <div class="boss-image-container">
+                        <img src="images/hac-am-ngo-khong-tinh.png" alt="Hắc Ám Ngộ Không"
+                            class="boss-image boss-level-5" data-boss-level="5">
+                    </div>
+
+                    <div class="boss-info">
+                        <div>
+                            <h3 class="boss-name">Hắc Ám Ngộ Không</h3>
+
+                            <div class="boss-details">
+                                <div class="boss-detail-item">
+                                    <i class="fas fa-star"></i>
+                                    <span>Cấp 5</span>
+                                </div>
+
+                                <button id="boss-rewards-info-btn" class="boss-rewards-info-btn" data-boss-level="5">
+                                    <i class="fas fa-gift"></i>
+                                    <span>Phần Thưởng</span>
+                                </button>
+                            </div>
+
+
+
+                            <div class="boss-hp-section">
+                                <div class="hp-bar-container">
+                                    <div class="hp-bar">
+                                        <div id="boss-hp-fill" class="hp-fill" style="width: 33.38%;"></div>
+                                        <div class="hp-percentage">33.38%</div>
+                                    </div>
+                                </div>
+                            </div>
+
+
+                            <div class="boss-summoner">
+                                Được triệu hồi bởi <span>HuyếtᏉôᏆình</span>
+                            </div>
+
+                        </div>
+
+                        <div class="boss-actions">
+                            <button id="challenge-boss-btn" class="challenge-btn disabled"
+                                data-boss="{&quot;id&quot;:2998,&quot;name&quot;:&quot;Hắc Ám Ngộ Không&quot;,&quot;level&quot;:5,&quot;max_hp&quot;:240000,&quot;current_hp&quot;:80252,&quot;image&quot;:&quot;/wp-content/themes/halimmovies-child/assets/image/gif/boss/hac-am-ngo-khong.png&quot;,&quot;die_image&quot;:&quot;/wp-content/themes/halimmovies-child/assets/image/gif/boss/hac-am-ngo-khong-tinh.png&quot;,&quot;created_time&quot;:&quot;2025-08-26 11:25:14&quot;,&quot;summon_time&quot;:&quot;2025-08-26 11:25:34&quot;,&quot;summon_timestamp&quot;:1756207534,&quot;is_dead&quot;:false,&quot;summoner_name&quot;:&quot;HuyếtᏉôᏆình&quot;,&quot;hp_percentage&quot;:33.44,&quot;boss_state&quot;:&quot;normal&quot;,&quot;defensive_broken&quot;:&quot;0&quot;,&quot;last_state_change&quot;:null,&quot;performance_time_limit&quot;:604800,&quot;expire_time_limit&quot;:2419200,&quot;performance_hours&quot;:168,&quot;expire_hours&quot;:672,&quot;time_elapsed&quot;:91077,&quot;time_remaining_to_expire&quot;:2328123,&quot;is_performance_failed&quot;:false,&quot;is_close_to_expire&quot;:false,&quot;performance_status&quot;:&quot;good&quot;,&quot;expire_warning&quot;:&quot;safe&quot;,&quot;is_defensive&quot;:false}"
+                                disabled=""><i class="fas fa-hourglass-half"></i> Còn 7:00</button>
+
+
+                            <div class="attack-info-display">
+                                <span>Lượt đánh còn lại: <span class="attack-count">3</span></span>
+                            </div>
+
+
+                            <div class="boss-info-buttons">
+                                <button id="boss-info-btn" class="info-btn info-guide-btn">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Thông Tin</span>
+                                </button>
+                                <button id="view-personal-history-btn" class="info-btn history-btn">
+                                    <i class="fas fa-history"></i>
+                                    <span>Lịch Sử</span>
+                                </button>
+                                <button id="view-boss-ranking-btn" class="info-btn ranking-btn">
+                                    <i class="fas fa-trophy"></i>
+                                    <span>Bảng Xếp Hạng</span>
+                                </button>
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Boss Damage Screen Popup -->
+    <div id="boss-damage-screen">
+        <img src="images/hac-am-ngo-khong-tinh.png" alt="Hắc Ám Ngộ Không" class="boss-image boss-level-5 battle-context" id="battle-boss-image" data-boss-level="5">
+        
+        <div class="battle-buttons-container">
+          <button id="attack-boss-btn" class="attack-button">
+            <i class="fas fa-fist-raised"></i> Tấn Công
+          </button>
+          <button id="back-button" class="back-button">
+            <i class="fas fa-arrow-left"></i> Trở lại
+          </button>
+        </div>
+    </div>
+    
+    <!-- ======= HẾT PHẦN HTML GỐC ======= -->
+
+    <script>
+        // Biến để lưu trữ interval của countdown
+        let countdownInterval = null;
+        
+        // Quản lý lượt đánh
+        const DAILY_ATTACKS = 5;
+        
+        // Hàm lấy ngày hiện tại (dạng YYYY-MM-DD)
+        function getCurrentDate() {
+            const now = new Date();
+            return now.getFullYear() + '-' + 
+                   String(now.getMonth() + 1).padStart(2, '0') + '-' + 
+                   String(now.getDate()).padStart(2, '0');
+        }
+        
+        // Hàm lấy số lượt đánh còn lại
+        function getRemainingAttacks() {
+            const today = getCurrentDate();
+            const lastAttackDate = localStorage.getItem('lastAttackDate');
+            let remainingAttacks = parseInt(localStorage.getItem('remainingAttacks') || DAILY_ATTACKS);
+            
+            // Nếu sang ngày mới, reset lượt đánh
+            if (lastAttackDate !== today) {
+                remainingAttacks = DAILY_ATTACKS;
+                localStorage.setItem('lastAttackDate', today);
+                localStorage.setItem('remainingAttacks', remainingAttacks);
+            }
+            
+            return remainingAttacks;
+        }
+        
+        // Hàm cập nhật số lượt đánh còn lại
+        function updateRemainingAttacks(newCount) {
+            localStorage.setItem('remainingAttacks', newCount);
+            updateAttackDisplay(newCount);
+        }
+        
+        // Hàm cập nhật hiển thị số lượt đánh
+        function updateAttackDisplay(remainingAttacks) {
+            const attackCountElement = document.querySelector('.attack-count');
+            if (attackCountElement) {
+                attackCountElement.textContent = remainingAttacks;
+            }
+        }
+        
+        // Hàm kiểm tra có thể tấn công không
+        function canAttack() {
+            return getRemainingAttacks() > 0;
+        }
+        
+        // Hàm đếm ngược cho nút thách đấu
+        function startCountdown() {
+            const challengeBtn = document.getElementById('challenge-boss-btn');
+            const icon = challengeBtn.querySelector('i');
+            
+            // Kiểm tra số lượt đánh còn lại
+            const remainingAttacks = getRemainingAttacks();
+            
+            // Nếu không còn lượt đánh, hiển thị thông báo hết lượt
+            if (remainingAttacks <= 0) {
+                challengeBtn.classList.add('disabled');
+                challengeBtn.setAttribute('disabled', 'true');
+                challengeBtn.style.background = 'linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02))';
+                challengeBtn.style.borderColor = 'rgba(255, 255, 255, .12)';
+                challengeBtn.style.boxShadow = 'none';
+                challengeBtn.innerHTML = '<i class="fas fa-ban"></i> Hết Lượt Đánh';
+                return;
+            }
+            
+            // Đặt lại trạng thái disabled cho nút
+            challengeBtn.classList.add('disabled');
+            challengeBtn.setAttribute('disabled', 'true');
+            challengeBtn.style.background = '';
+            challengeBtn.style.borderColor = '';
+            challengeBtn.style.boxShadow = '';
+            
+            // Bắt đầu từ 7 phút (420 giây)
+            let timeLeft = 7 * 60; // 420 giây
+            // Test
+            timeLeft = 10; // Giảm thời gian đếm ngược để test nhanh
+            
+            // Xóa interval cũ nếu có
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+            
+            countdownInterval = setInterval(() => {
+                if (timeLeft <= 0) {
+                    // Kiểm tra lại số lượt đánh trước khi cho phép thách đấu
+                    const currentRemaining = getRemainingAttacks();
+                    if (currentRemaining <= 0) {
+                        clearInterval(countdownInterval);
+                        countdownInterval = null;
+                        challengeBtn.classList.add('disabled');
+                        challengeBtn.setAttribute('disabled', 'true');
+                        challengeBtn.innerHTML = '<i class="fas fa-ban"></i> Hết Lượt Đánh';
+                        return;
+                    }
+                    
+                    // Khi hết thời gian, thay đổi nút thành "KHIÊU CHIẾN"
+                    clearInterval(countdownInterval);
+                    countdownInterval = null;
+                    challengeBtn.classList.remove('disabled');
+                    challengeBtn.removeAttribute('disabled');
+                    icon.className = 'fas fa-sword';
+                    challengeBtn.innerHTML = '<i class="fas fa-sword"></i> KHIÊU CHIẾN';
+                    
+                    // Thêm hiệu ứng đặc biệt khi có thể thách đấu
+                    challengeBtn.style.background = 'linear-gradient(95deg, rgba(34, 197, 94, .18), rgba(142, 252, 243, .14))';
+                    challengeBtn.style.borderColor = 'rgba(34, 197, 94, .35)';
+                    challengeBtn.style.boxShadow = '0 10px 24px rgba(34, 197, 94, .16)';
+                    
+                    // Thêm sự kiện click cho nút KHIÊU CHIẾN
+                    challengeBtn.removeEventListener('click', showBossDamageScreen); // Xóa event listener cũ
+                    challengeBtn.addEventListener('click', showBossDamageScreen);
+                    
+                    return;
+                }
+                
+                // Tính toán phút và giây
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                
+                // Định dạng thời gian (thêm số 0 phía trước nếu cần)
+                const formattedTime = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+                challengeBtn.innerHTML = `<i class="fas fa-hourglass-half"></i> Còn ${formattedTime}`;
+                
+                timeLeft--;
+            }, 1000); // Cập nhật mỗi giây
+        }
+        
+        // Hàm hiển thị popup boss damage screen
+        function showBossDamageScreen() {
+            // Kiểm tra lại số lượt đánh trước khi mở popup
+            if (!canAttack()) {
+                alert('Bạn đã hết lượt đánh hôm nay! Vui lòng quay lại vào ngày mai.');
+                return;
+            }
+            
+            const popup = document.getElementById('boss-damage-screen');
+            popup.classList.add('show');
+            document.body.style.overflow = 'hidden'; // Ngăn scroll trang chính
+        }
+        
+        // Hàm ẩn popup boss damage screen
+        function hideBossDamageScreen() {
+            const popup = document.getElementById('boss-damage-screen');
+            popup.classList.remove('show');
+            document.body.style.overflow = ''; // Khôi phục scroll
+        }
+        
+        // Hàm xử lý khi tấn công boss
+        function attackBoss() {
+            // Kiểm tra số lượt đánh
+            const remainingAttacks = getRemainingAttacks();
+            if (remainingAttacks <= 0) {
+                alert('Bạn đã hết lượt đánh hôm nay!');
+                hideBossDamageScreen();
+                return;
+            }
+            
+            // Giảm số lượt đánh
+            const newRemainingAttacks = remainingAttacks - 1;
+            updateRemainingAttacks(newRemainingAttacks);
+            
+            // Đóng popup
+            hideBossDamageScreen();
+            
+            // Hiển thị thông báo tấn công
+            if (newRemainingAttacks > 0) {
+                alert(`Bạn đã tấn công boss! Còn lại ${newRemainingAttacks} lượt đánh. Vui lòng chờ để tấn công tiếp theo.`);
+                // Bắt đầu lại countdown
+                startCountdown();
+            } else {
+                alert('Bạn đã tấn công boss! Đã hết lượt đánh hôm nay, vui lòng quay lại vào ngày mai.');
+                // Không bắt đầu countdown nữa
+                const challengeBtn = document.getElementById('challenge-boss-btn');
+                challengeBtn.classList.add('disabled');
+                challengeBtn.setAttribute('disabled', 'true');
+                challengeBtn.style.background = 'linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02))';
+                challengeBtn.style.borderColor = 'rgba(255, 255, 255, .12)';
+                challengeBtn.style.boxShadow = 'none';
+                challengeBtn.innerHTML = '<i class="fas fa-ban"></i> Hết Lượt Đánh';
+            }
+        }
+        
+        // Bắt đầu đếm ngược khi trang được tải
+        window.addEventListener('DOMContentLoaded', function() {
+            // Cập nhật hiển thị số lượt đánh
+            updateAttackDisplay(getRemainingAttacks());
+            
+            // Bắt đầu countdown
+            startCountdown();
+            
+            // Thêm sự kiện cho nút "Trở lại"
+            const backButton = document.getElementById('back-button');
+            backButton.addEventListener('click', hideBossDamageScreen);
+            
+            // Thêm sự kiện cho nút "Tấn Công"
+            const attackButton = document.getElementById('attack-boss-btn');
+            attackButton.addEventListener('click', attackBoss);
+            
+            // Đóng popup khi click outside (tuỳ chọn)
+            const popup = document.getElementById('boss-damage-screen');
+            popup.addEventListener('click', function(e) {
+                if (e.target === popup) {
+                    hideBossDamageScreen();
+                }
+            });
+        });
+    </script>
+
+</body>
+
+</html>

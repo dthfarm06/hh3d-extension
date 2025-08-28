@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mock Boss Battle - Hoang Vực Test</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #1a1a1a;
+            color: white;
+        }
+        
+        .game-container {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: #2a2a2a;
+            padding: 20px;
+            border-radius: 10px;
+        }
+        
+        .boss-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .boss-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #ff6b6b;
+            margin-bottom: 10px;
+        }
+        
+        .attack-count {
+            font-size: 18px;
+            color: #4ecdc4;
+            margin-bottom: 20px;
+        }
+        
+        .battle-button {
+            background-color: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        .battle-button:disabled {
+            background-color: #666;
+            cursor: not-allowed;
+        }
+        
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 1000;
+        }
+        
+        .battle-popup {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background-color: #3a3a3a;
+            padding: 30px;
+            border-radius: 10px;
+            text-align: center;
+            min-width: 400px;
+        }
+        
+        .attack-button {
+            background-color: #4ecdc4;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        .back-button {
+            background-color: #95a5a6;
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 5px;
+            cursor: pointer;
+            margin: 10px;
+        }
+        
+        .status {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #34495e;
+            border-radius: 5px;
+        }
+        
+        .logs {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #2c3e50;
+            border-radius: 5px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+        <div class="game-container">
+        <div class="boss-info">
+            <div class="boss-name">Boss Hoang Vực</div>
+            <div class="attack-count">Lượt đánh còn lại: <span id="attacks-left">5</span></div>
+        </div>        <div style="text-align: center;">
+            <button class="battle-button" id="battle-button" onclick="startBattle()">Khiêu chiến</button>
+            <br><br>
+            <button style="background-color: #34495e; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;" onclick="setTestMode()">
+                Test Mode (30s countdown)
+            </button>
+        </div>
+        
+        <div class="status">
+            <h3>Trạng thái Extension:</h3>
+            <div id="extension-status">Chưa kết nối</div>
+        </div>
+        
+        <div class="logs">
+            <h4>Extension Logs:</h4>
+            <div id="logs-content"></div>
+        </div>
+    </div>
+    
+    <!-- Battle Popup -->
+    <div class="popup-overlay" id="battle-popup">
+        <div class="battle-popup">
+            <h2>🐉 Chiến Đấu Với Boss</h2>
+            <p>Bạn đang chiến đấu với <span class="boss-name">Boss Hoang Vực</span></p>
+            <div style="margin: 20px 0;">
+                <button class="attack-button" onclick="attackBoss()">⚔️Tấn Công</button>
+            </div>
+            <div id="battle-result" style="margin: 20px 0; min-height: 40px;"></div>
+            <div>
+                <button class="back-button" onclick="endBattle()" style="display: none;" id="back-btn">Trở lại</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let attacksLeft = 5;
+        let battleInProgress = false;
+        let isTestMode = false; // For faster testing
+        
+        function setTestMode() {
+            isTestMode = !isTestMode;
+            const btn = event.target;
+            if (isTestMode) {
+                btn.textContent = 'Normal Mode (20min countdown)';
+                btn.style.backgroundColor = '#e74c3c';
+                addLog('Test mode enabled: 30s countdown');
+            } else {
+                btn.textContent = 'Test Mode (30s countdown)';
+                btn.style.backgroundColor = '#34495e';
+                addLog('Normal mode enabled: 20min countdown');
+            }
+        }
+        
+        function addLog(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logsContent = document.getElementById('logs-content');
+            logsContent.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+            logsContent.scrollTop = logsContent.scrollHeight;
+        }
+        
+        function updateAttacksLeft() {
+            document.getElementById('attacks-left').textContent = attacksLeft;
+            if (attacksLeft <= 0) {
+                const battleBtn = document.getElementById('battle-button');
+                battleBtn.textContent = 'Hết Lượt';
+                battleBtn.disabled = true;
+            }
+        }
+        
+        function startBattle() {
+            if (attacksLeft <= 0 || battleInProgress) return;
+            
+            addLog('Bắt đầu thách đấu boss...');
+            battleInProgress = true;
+            
+            // Show popup after a short delay to simulate loading
+            setTimeout(() => {
+                document.getElementById('battle-popup').style.display = 'block';
+                addLog('Popup chiến đấu đã hiển thị');
+            }, 500);
+        }
+        
+        function attackBoss() {
+            if (attacksLeft <= 0) return;
+            
+            addLog('Đang tấn công boss...');
+            attacksLeft--;
+            updateAttacksLeft();
+            
+            // Simulate attack result
+            const damage = Math.floor(Math.random() * 1000) + 500;
+            const resultDiv = document.getElementById('battle-result');
+            resultDiv.innerHTML = `<div style="color: #4ecdc4;">Gây ${damage} sát thương!</div>`;
+            
+            // Show back button after attack
+            setTimeout(() => {
+                document.getElementById('back-btn').style.display = 'inline-block';
+                addLog('Có thể trở lại');
+            }, 1000);
+        }
+        
+        function endBattle() {
+            addLog('Kết thúc chiến đấu, trở lại');
+            document.getElementById('battle-popup').style.display = 'none';
+            document.getElementById('battle-result').innerHTML = '';
+            document.getElementById('back-btn').style.display = 'none';
+            battleInProgress = false;
+            
+            // Simulate countdown state
+            startCooldown();
+        }
+        
+        function startCooldown() {
+            const battleBtn = document.getElementById('battle-button');
+            let timeLeft = isTestMode ? 30 : (20 * 60); // 30 seconds for test, 20 minutes for normal
+            
+            const updateCountdown = () => {
+                if (timeLeft <= 0) {
+                    // Check if we still have attacks left
+                    if (attacksLeft > 0) {
+                        battleBtn.textContent = 'Khiêu chiến';
+                        battleBtn.disabled = false;
+                        addLog(`Countdown hoàn thành! Có thể thách đấu lại (Còn ${attacksLeft} lượt)`);
+                    } else {
+                        battleBtn.textContent = 'Hết Lượt';
+                        battleBtn.disabled = true;
+                        addLog('Đã hết 5 lượt đánh boss hôm nay!');
+                    }
+                    return;
+                }
+                
+                const minutes = Math.floor(timeLeft / 60);
+                const seconds = timeLeft % 60;
+                battleBtn.textContent = `Còn ${minutes}:${seconds.toString().padStart(2, '0')}`;
+                battleBtn.disabled = true;
+                timeLeft--;
+                
+                setTimeout(updateCountdown, 1000);
+            };
+            
+            const attackNumber = 6 - attacksLeft; // Current attack number completed
+            const countdownText = isTestMode ? '30 giây' : '20 phút';
+            addLog(`Bắt đầu countdown ${countdownText} sau lượt ${attackNumber}/5 (còn ${attacksLeft} lượt)`);
+            updateCountdown();
+        }
+        
+        // Monitor extension status
+        function checkExtensionStatus() {
+            const statusDiv = document.getElementById('extension-status');
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                statusDiv.innerHTML = '<span style="color: #4ecdc4;">✅ Extension đã kết nối</span>';
+                addLog('Extension Boss Helper đã sẵn sàng');
+            } else {
+                statusDiv.innerHTML = '<span style="color: #ff6b6b;">❌ Extension chưa kết nối</span>';
+            }
+        }
+        
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateAttacksLeft();
+            checkExtensionStatus();
+            addLog('Mock Boss Battle page loaded - Hoang Vực');
+        });
+        
+        // Check extension status every 2 seconds
+        setInterval(checkExtensionStatus, 2000);
+    </script>
+</body>
+</html>

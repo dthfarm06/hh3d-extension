@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HH3D Vấn Đáp Helper</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎯 HH3D Vấn Đáp</h1>
+            <div class="header-controls">
+                <button id="pinBtn" class="pin-btn" title="Ghim popup">📌</button>
+                <button id="closeBtn" class="close-btn">✕</button>
+            </div>
+        </div>
+        
+        <div class="status-section">
+            <div id="urlStatus" class="url-status error">
+                ❌ Không phải trang vấn đáp
+            </div>
+            <div id="questionStatus" class="question-status">
+                ⏳ Chờ câu hỏi...
+            </div>
+        </div>
+        
+        <div class="question-section">
+            <h3>Câu hỏi hiện tại:</h3>
+            <div id="currentQuestion" class="current-question">
+                Chưa phát hiện câu hỏi
+            </div>
+        </div>
+        
+        <div class="answer-section">
+            <h3>Đáp án:</h3>
+            <div id="currentAnswer" class="current-answer">
+                Chưa có đáp án
+            </div>
+            <button id="clickAnswerBtn" class="click-answer-btn" disabled>
+                🎯 Nhấn đáp án
+            </button>
+        </div>
+        
+        <div class="controls">
+            <label class="toggle">
+                <input type="checkbox" id="autoClickToggle">
+                <span class="toggle-label">🤖 Tự động nhấn đáp án</span>
+            </label>
+            
+            <label class="toggle">
+                <input type="checkbox" id="autoModeToggle">
+                <span class="toggle-label">🚀 Chế độ tự động hoàn toàn</span>
+            </label>
+            
+            <div class="progress">
+                <span>Tiến độ:</span>
+                <span id="questionCounter" class="counter">0/5</span>
+            </div>
+            
+            <div class="control-buttons">
+                <button id="refreshBtn" class="refresh-btn">
+                    🔄 Làm mới
+                </button>
+                <button id="stopAutoBtn" class="stop-btn" style="display: none;">
+                    ⏹️ Dừng Auto
+                </button>
+                <button id="restartBtn" class="restart-btn">
+                    🔄 Khởi động lại
+                </button>
+            </div>
+        </div>
+        
+        <div class="options-section" id="optionsSection" style="display: none;">
+            <h4>Các lựa chọn có sẵn:</h4>
+            <div id="availableOptions" class="available-options"></div>
+        </div>
+        
+        <div class="log-section">
+            <h4>Nhật ký:</h4>
+            <div id="logMessages" class="log-messages">
+                <div class="log-item">🚀 Extension đã khởi tạo</div>
+            </div>
+        </div>
+    </div>
+    
+    <script src="popup.js"></script>
+</body>
+</html>

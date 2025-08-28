@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <header class="header">
+      <h2>🐉 Boss Helper</h2>
+      <div class="version">v1.0.0</div>
+    </header>
+    
+    <div class="status-section">
+      <div class="status-item">
+        <span class="label">Trạng thái:</span>
+        <span id="status" class="value loading">Đang tải...</span>
+      </div>
+      
+      <div class="status-item">
+        <span class="label">Thời gian:</span>
+        <span id="timer" class="value">--:--</span>
+      </div>
+      
+      <div class="status-item">
+        <span class="label">Lượt đánh:</span>
+        <span id="attacks" class="value">-/5</span>
+      </div>
+      
+      <div class="status-item">
+        <span class="label">Boss:</span>
+        <span id="boss-name" class="value">Không xác định</span>
+      </div>
+    </div>
+
+    <div class="settings-section">
+      <label class="checkbox-label">
+        <input type="checkbox" id="autoEnabled">
+        <span class="checkmark"></span>
+        <span class="text">Tự động đánh boss</span>
+      </label>
+      
+      <label class="checkbox-label">
+        <input type="checkbox" id="notificationsEnabled">
+        <span class="checkmark"></span>
+        <span class="text">Thông báo khi sẵn sàng</span>
+      </label>
+      
+      <label class="checkbox-label">
+        <input type="checkbox" id="soundEnabled">
+        <span class="checkmark"></span>
+        <span class="text">Âm thanh cảnh báo</span>
+      </label>
+    </div>
+
+    <div class="actions-section">
+      <button id="refreshBtn" class="btn secondary">
+        <span class="icon">🔄</span>
+        <span class="text">Làm mới</span>
+      </button>
+      
+      <button id="toggleBtn" class="btn primary">
+        <span class="icon">⚡</span>
+        <span id="toggleText" class="text">Bật Extension</span>
+      </button>
+    </div>
+    
+    <div class="info-section">
+      <div class="mode-indicator">
+        Mode: <span id="mode">UNKNOWN</span>
+      </div>
+      
+      <div class="last-update">
+        Cập nhật: <span id="last-update">Chưa có</span>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

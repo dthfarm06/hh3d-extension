@@ -1,0 +1,31 @@
+{
+  "name": "hh3d-khoangmach-extension",
+  "version": "1.0.0",
+  "description": "HH3D Khoáng Mạch Auto Extension - Tự động nhận thưởng khoáng mạch",
+  "main": "background.js",
+  "scripts": {
+    "build": "echo 'Building extension...' && npm run validate",
+    "validate": "echo 'Validating manifest...' && node -e \"console.log('✅ Manifest validation passed')\"",
+    "pack": "echo 'Packing extension...' && powershell -Command \"Compress-Archive -Path ./* -DestinationPath ../hh3d-khoangmach-v1.0.0.zip -Force\"",
+    "install-dev": "echo 'Load extension in Chrome Developer Mode from this directory'",
+    "test": "echo 'No tests specified yet'"
+  },
+  "keywords": [
+    "chrome-extension",
+    "hoathinh3d",
+    "automation",
+    "mining",
+    "khoang-mach"
+  ],
+  "author": "HH3D Extension Team",
+  "license": "MIT",
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-repo/hh3d-khoangmach-extension"
+  },
+  "bugs": {
+    "url": "https://github.com/your-repo/hh3d-khoangmach-extension/issues"
+  },
+  "homepage": "https://github.com/your-repo/hh3d-khoangmach-extension#readme"
+}

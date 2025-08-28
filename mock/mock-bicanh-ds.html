@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bí Cảnh Tông Môn - Huyết Thần Giáo</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Biến màu sắc để dễ dàng tùy chỉnh */
+        :root {
+            --primary-color: #8a0303;
+            --secondary-color: #5e0000;
+            --accent-color: #ffcc00;
+            --text-color: #f1f1f1;
+            --dark-bg: #1a1a1a;
+            --light-bg: #2a2a2a;
+            --hp-bar: #e74c3c;
+            --hp-bg: #444;
+            --button-bg: #3a3a3a;
+            --button-hover: #4a4a4a;
+            --guild-color: #ff3d3d;
+            --timer-color: #ff9900;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: var(--text-color);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .boss-game-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(26, 26, 46, 0.8);
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-title {
+            background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .game-title h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .guild-info {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            flex-wrap: wrap;
+        }
+
+        .guild-name {
+            font-weight: bold;
+            color: var(--guild-color);
+            font-size: 18px;
+            text-shadow: 0 0 5px rgba(255, 61, 61, 0.7);
+        }
+
+        .tinh-thach-display {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tinh-thach-amount {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        #boss-status-container {
+            padding: 25px;
+        }
+
+        .boss-active-section {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .boss-timer-section {
+            display: flex;
+            justify-content: center;
+        }
+
+        .boss-timer {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 10px 20px;
+            border-radius: 30px;
+            font-size: 18px;
+            color: var(--timer-color);
+            border: 1px solid rgba(255, 153, 0, 0.3);
+        }
+
+        .boss-content {
+            display: flex;
+            gap: 25px;
+            flex-wrap: wrap;
+        }
+
+        .boss-image-container {
+            flex: 1;
+            min-width: 300px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .boss-image {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            border: 3px solid var(--primary-color);
+            transition: transform 0.3s ease;
+        }
+
+        .boss-image:hover {
+            transform: scale(1.03);
+        }
+
+        .boss-info {
+            flex: 2;
+            min-width: 300px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            gap: 20px;
+        }
+
+        .boss-name {
+            font-size: 28px;
+            color: var(--accent-color);
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .boss-details {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+
+        .boss-detail-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .boss-rewards-info-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: linear-gradient(to right, #2980b9, #3498db);
+            color: white;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .boss-rewards-info-btn:hover {
+            background: linear-gradient(to right, #3498db, #2980b9);
+            transform: translateY(-2px);
+        }
+
+        .boss-hp-section {
+            margin: 15px 0;
+        }
+
+        .hp-bar-container {
+            background: var(--hp-bg);
+            height: 30px;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.5);
+        }
+
+        .hp-fill {
+            height: 100%;
+            background: linear-gradient(to right, var(--primary-color), var(--hp-bar));
+            border-radius: 15px;
+            transition: width 0.5s ease;
+            position: relative;
+        }
+
+        .hp-percentage {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .boss-summoner {
+            font-style: italic;
+            color: #aaa;
+            margin-top: 10px;
+        }
+
+        .boss-summoner span {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .boss-actions {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .challenge-btn {
+            background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .challenge-btn:hover:not(.disabled) {
+            background: linear-gradient(to right, var(--secondary-color), var(--primary-color));
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .challenge-btn.disabled {
+            background: #555;
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+
+        .attack-info-display {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 14px;
+        }
+
+        .attack-count {
+            color: var(--accent-color);
+            font-weight: bold;
+        }
+
+        .boss-info-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .info-btn {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            background: var(--button-bg);
+            color: var(--text-color);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+            justify-content: center;
+        }
+
+        .info-btn:hover {
+            background: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .game-title {
+                flex-direction: column;
+                text-align: center;
+            }
+
+            .boss-content {
+                flex-direction: column;
+            }
+
+            .boss-info-buttons {
+                flex-direction: column;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="boss-game-container">
+        <div class="game-title">
+            <h1><i class="fas fa-dragon"></i> Bí Cảnh Tông Môn</h1>
+            <div class="guild-info">
+                <div class="guild-name bang-hoi-mau-liet-diem-hoang">Huyết Thần Giáo</div>
+                <div class="tinh-thach-display">
+                    <i class="fas fa-gem"></i>
+                    <span class="tinh-thach-amount">66,192</span>
+                    <span class="tinh-thach-label">Tinh Thạch</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="boss-status-container">
+            <div class="boss-active-section">
+                <div class="boss-timer-section">
+                    <div class="boss-timer">
+                        <i class="fas fa-clock"></i>
+                        <span id="boss-timer-text">25:19:24</span>
+                    </div>
+                </div>
+
+                <div class="boss-content">
+                    <div class="boss-image-container">
+                        <img src="images/hac-am-ngo-khong-tinh.png" alt="Hắc Ám Ngộ Không"
+                            class="boss-image boss-level-5" data-boss-level="5">
+                    </div>
+
+                    <div class="boss-info">
+                        <div>
+                            <h3 class="boss-name">Hắc Ám Ngộ Không</h3>
+
+                            <div class="boss-details">
+                                <div class="boss-detail-item">
+                                    <i class="fas fa-star"></i>
+                                    <span>Cấp 5</span>
+                                </div>
+
+                                <button id="boss-rewards-info-btn" class="boss-rewards-info-btn" data-boss-level="5">
+                                    <i class="fas fa-gift"></i>
+                                    <span>Phần Thưởng</span>
+                                </button>
+                            </div>
+
+                            <div class="boss-hp-section">
+                                <div class="hp-bar-container">
+                                    <div id="boss-hp-fill" class="hp-fill" style="width: 33.38%;"></div>
+                                    <div class="hp-percentage">33.38%</div>
+                                </div>
+                            </div>
+
+                            <div class="boss-summoner">
+                                Được triệu hồi bởi <span>HuyếtᏉôᏆình</span>
+                            </div>
+                        </div>
+
+                        <div class="boss-actions">
+                            <button id="challenge-boss-btn" class="challenge-btn disabled"
+                                data-boss="{&quot;id&quot;:2998,&quot;name&quot;:&quot;Hắc Ám Ngộ Không&quot;,&quot;level&quot;:5,&quot;max_hp&quot;:240000,&quot;current_hp&quot;:80252,&quot;image&quot;:&quot;/wp-content/themes/halimmovies-child/assets/image/gif/boss/hac-am-ngo-khong.png&quot;,&quot;die_image&quot;:&quot;/wp-content/themes/halimmovies-child/assets/image/gif/boss/hac-am-ngo-khong-tinh.png&quot;,&quot;created_time&quot;:&quot;2025-08-26 11:25:14&quot;,&quot;summon_time&quot;:&quot;2025-08-26 11:25:34&quot;,&quot;summon_timestamp&quot;:1756207534,&quot;is_dead&quot;:false,&quot;summoner_name&quot;:&quot;HuyếtᏉôᏆình&quot;,&quot;hp_percentage&quot;:33.44,&quot;boss_state&quot;:&quot;normal&quot;,&quot;defensive_broken&quot;:&quot;0&quot;,&quot;last_state_change&quot;:null,&quot;performance_time_limit&quot;:604800,&quot;expire_time_limit&quot;:2419200,&quot;performance_hours&quot;:168,&quot;expire_hours&quot;:672,&quot;time_elapsed&quot;:91077,&quot;time_remaining_to_expire&quot;:2328123,&quot;is_performance_failed&quot;:false,&quot;is_close_to_expire&quot;:false,&quot;performance_status&quot;:&quot;good&quot;,&quot;expire_warning&quot;:&quot;safe&quot;,&quot;is_defensive&quot;:false}"
+                                disabled>
+                                <i class="fas fa-hourglass-half"></i> Còn 5:39
+                            </button>
+
+                            <div class="attack-info-display">
+                                <span>Lượt đánh còn lại: <span class="attack-count">3</span></span>
+                            </div>
+
+                            <div class="boss-info-buttons">
+                                <button id="boss-info-btn" class="info-btn info-guide-btn">
+                                    <i class="fas fa-info-circle"></i>
+                                    <span>Thông Tin</span>
+                                </button>
+                                <button id="view-personal-history-btn" class="info-btn history-btn">
+                                    <i class="fas fa-history"></i>
+                                    <span>Lịch Sử</span>
+                                </button>
+                                <button id="view-boss-ranking-btn" class="info-btn ranking-btn">
+                                    <i class="fas fa-trophy"></i>
+                                    <span>Bảng Xếp Hạng</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript cho các hiệu ứng tương tác
+        document.addEventListener('DOMContentLoaded', function () {
+            // Hiệu ứng hover cho các nút
+            const buttons = document.querySelectorAll('button:not(.disabled)');
+            buttons.forEach(button => {
+                button.addEventListener('mouseenter', function () {
+                    this.style.transform = 'translateY(-2px)';
+                    this.style.boxShadow = '0 4px 8px rgba(0, 0, 0, 0.2)';
+                });
+
+                button.addEventListener('mouseleave', function () {
+                    this.style.transform = 'translateY(0)';
+                    this.style.boxShadow = 'none';
+                });
+            });
+
+            // Hiệu ứng cho thanh máu
+            const hpFill = document.getElementById('boss-hp-fill');
+            if (hpFill) {
+                // Thêm hiệu ứng gradient động cho thanh máu
+                hpFill.style.background = 'linear-gradient(to right, #8a0303, #e74c3c)';
+            }
+
+            // Hiệu ứng cho nút khiếm khuyết (để demo)
+            const challengeBtn = document.getElementById('challenge-boss-btn');
+            if (challengeBtn) {
+                challengeBtn.addEventListener('click', function () {
+                    if (!this.classList.contains('disabled')) {
+                        alert('Chiến đấu với Hắc Ám Ngộ Không!');
+                    }
+                });
+            }
+
+            // Hiệu ứng cho nút phần thưởng
+            const rewardsBtn = document.getElementById('boss-rewards-info-btn');
+            if (rewardsBtn) {
+                rewardsBtn.addEventListener('click', function () {
+                    alert('Xem phần thưởng của Hắc Ám Ngộ Không!');
+                });
+            }
+        });
+    </script>
+</body>
+
+</html>

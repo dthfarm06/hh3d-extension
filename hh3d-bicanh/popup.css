@@ -1,0 +1,311 @@
+/* Popup Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  width: 320px;
+  min-height: 400px;
+  font-family: "Be Vietnam Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: linear-gradient(135deg, #0b0f14, #0e141b);
+  color: #e8eef6;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.container {
+  padding: 16px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  min-height: 400px;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.header h2 {
+  font-size: 18px;
+  font-weight: 800;
+  color: #7cc0ff;
+  text-shadow: 0 2px 8px rgba(124, 192, 255, .35);
+}
+
+.version {
+  font-size: 11px;
+  color: #a9b6c7;
+  background: rgba(255, 255, 255, 0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+/* Status Section */
+.status-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  padding: 4px 0;
+}
+
+.status-item:last-child {
+  margin-bottom: 0;
+}
+
+.status-item .label {
+  font-weight: 600;
+  color: #a9b6c7;
+  font-size: 13px;
+}
+
+.status-item .value {
+  font-weight: 700;
+  font-size: 13px;
+  text-align: right;
+  max-width: 160px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.value.loading {
+  color: #ffd166;
+  animation: pulse 2s ease-in-out infinite;
+}
+
+.value.countdown {
+  color: #ffd166;
+  font-variant-numeric: tabular-nums;
+}
+
+.value.ready {
+  color: #22c55e;
+  font-weight: 900;
+  text-shadow: 0 0 8px rgba(34, 197, 94, .4);
+}
+
+.value.depleted {
+  color: #ff6b6b;
+}
+
+.value.unknown {
+  color: #a9b6c7;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+/* Settings Section */
+.settings-section {
+  margin-bottom: 16px;
+  padding: 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .04), rgba(255, 255, 255, .01));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+  cursor: pointer;
+  user-select: none;
+  padding: 4px 0;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+.checkbox-label:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.checkbox-label:last-child {
+  margin-bottom: 0;
+}
+
+.checkbox-label input[type="checkbox"] {
+  display: none;
+}
+
+.checkmark {
+  position: relative;
+  width: 18px;
+  height: 18px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 4px;
+  margin-right: 10px;
+  transition: all 0.2s ease;
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark {
+  background: linear-gradient(135deg, #7cc0ff, #5ab1ff);
+  border-color: #5ab1ff;
+  box-shadow: 0 0 10px rgba(124, 192, 255, .3);
+}
+
+.checkbox-label input[type="checkbox"]:checked + .checkmark::after {
+  content: "✓";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+}
+
+.checkbox-label .text {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Actions Section */
+.actions-section {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 10px 12px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .06), rgba(255, 255, 255, .02));
+  text-decoration: none;
+  font-family: inherit;
+}
+
+.btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, .2);
+}
+
+.btn.primary {
+  border-color: rgba(124, 192, 255, .35);
+  color: #e8eef6;
+  background: linear-gradient(135deg, rgba(124, 192, 255, .18), rgba(142, 252, 243, .12));
+}
+
+.btn.primary:hover {
+  border-color: rgba(124, 192, 255, .5);
+  box-shadow: 0 4px 16px rgba(124, 192, 255, .2);
+}
+
+.btn.primary.active {
+  background: linear-gradient(135deg, rgba(34, 197, 94, .18), rgba(142, 252, 243, .12));
+  border-color: rgba(34, 197, 94, .35);
+  color: #22c55e;
+}
+
+.btn.secondary {
+  border-color: rgba(255, 255, 255, .15);
+  color: #a9b6c7;
+}
+
+.btn.secondary:hover {
+  border-color: rgba(255, 255, 255, .25);
+  color: #e8eef6;
+}
+
+.btn .icon {
+  font-size: 14px;
+}
+
+.btn .text {
+  font-size: 12px;
+}
+
+/* Info Section */
+.info-section {
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  font-size: 11px;
+  color: #a9b6c7;
+}
+
+.mode-indicator {
+  margin-bottom: 4px;
+}
+
+.mode-indicator span {
+  font-weight: 700;
+  padding: 1px 4px;
+  border-radius: 3px;
+}
+
+.mode-indicator .test {
+  background: rgba(255, 193, 7, 0.2);
+  color: #ffc107;
+}
+
+.mode-indicator .prod {
+  background: rgba(34, 197, 94, 0.2);
+  color: #22c55e;
+}
+
+.last-update {
+  font-size: 10px;
+}
+
+/* Loading States */
+.loading-spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 50%;
+  border-top-color: #7cc0ff;
+  animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 2px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}

@@ -1,0 +1,42 @@
+{
+  "manifest_version": 3,
+  "name": "Hoang Vực Auto Boss Helper",
+  "version": "1.0.0",
+  "description": "Tự động hỗ trợ đánh boss trong game Hoang Vực",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "notifications",
+    "alarms"
+  ],
+  "host_permissions": [
+    "https://hoathinh3d.mx/*",
+    "file://*/*"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [{
+    "matches": [
+      "https://hoathinh3d.mx/hoang-vuc*",
+      "file://*/*mock-bicanh.html*",
+      "file://*/*mock-boss.html*"
+    ],
+    "js": ["content.js"],
+    "run_at": "document_end"
+  }],
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "Boss Helper",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}

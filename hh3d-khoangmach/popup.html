@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HH3D Khoáng Mạch Auto</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="title">
+                <span class="icon">🏔️</span>
+                <h1>HH3D Khoáng Mạch</h1>
+            </div>
+            <div class="version">v1.0.0</div>
+        </div>
+
+        <!-- Status Section -->
+        <div class="status-section">
+            <div class="status-item">
+                <span class="label">Trạng thái:</span>
+                <span id="miningStatus" class="status-value">Đang tải...</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="label">Countdown:</span>
+                <span id="countdownTimer" class="countdown-value">--:--</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="label">Lần cuối:</span>
+                <span id="lastRewardTime" class="time-value">Chưa có</span>
+            </div>
+            
+            <div class="status-item">
+                <span class="label">Tổng nhận:</span>
+                <span id="totalRewards" class="count-value">0</span>
+            </div>
+        </div>
+
+        <!-- Controls Section -->
+        <div class="controls-section">
+            <button id="toggleMining" class="btn btn-primary">
+                <span id="toggleText">Bắt đầu</span>
+            </button>
+            
+            <button id="claimRewardNow" class="btn btn-success">
+                🎁 Nhận Thưởng Ngay
+            </button>
+            
+            <button id="refreshStatus" class="btn btn-secondary">
+                🔄 Cập nhật
+            </button>
+            
+            <button id="forceActivate" class="btn btn-link" style="display: none;">
+                🔌 Kích hoạt thủ công
+            </button>
+        </div>
+
+        <!-- Mining Info Section -->
+        <div class="info-section" id="miningInfo" style="display: none;">
+            <h3>Thông tin đào:</h3>
+            <div class="info-item">
+                <span class="label">Nhân vật:</span>
+                <span id="characterName">--</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Mỏ hiện tại:</span>
+                <span id="currentMine">--</span>
+            </div>
+            <div class="info-item">
+                <span class="label">Chu kỳ:</span>
+                <span id="currentCycle">--</span>
+            </div>
+        </div>
+
+        <!-- Settings Section -->
+        <div class="settings-section">
+            <button id="settingsToggle" class="btn btn-link">
+                ⚙️ Cài đặt
+            </button>
+            
+            <div id="settingsPanel" class="settings-panel" style="display: none;">
+                <div class="setting-item">
+                    <label for="intervalSetting">Khoảng thời gian (phút):</label>
+                    <input type="number" id="intervalSetting" min="1" max="60" value="15" step="1">
+                    <small class="setting-help">Từ 1-60 phút. Khuyến nghị: 15 phút</small>
+                </div>
+                
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="autoStartSetting" checked>
+                        Tự động bắt đầu
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="notificationsSetting" checked>
+                        Hiện thông báo
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <label>
+                        <input type="checkbox" id="soundAlertSetting">
+                        Âm thanh cảnh báo
+                    </label>
+                </div>
+                
+                <div class="setting-item">
+                    <label for="volumeSetting">Âm lượng:</label>
+                    <input type="range" id="volumeSetting" min="0" max="100" value="70" step="10">
+                    <small class="setting-help">Âm lượng từ 0-100%</small>
+                </div>
+                
+                <div class="setting-item">
+                    <button id="testSounds" class="btn btn-small" type="button">🔊 Test âm thanh</button>
+                    <small class="setting-help">Click để test tất cả âm thanh</small>
+                </div>
+                
+                <button id="saveSettings" class="btn btn-small">💾 Lưu</button>
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <div class="links">
+                <button id="openMiningPage" class="btn btn-link">
+                    🔗 Mở trang khoáng mạch
+                </button>
+            </div>
+            
+            <div class="debug-info" id="debugInfo" style="display: none;">
+                <small>
+                    Tab ID: <span id="tabId">--</span><br>
+                    Last Update: <span id="lastUpdate">--</span>
+                </small>
+            </div>
+        </div>
+
+        <!-- Loading Overlay -->
+        <div id="loadingOverlay" class="loading-overlay">
+            <div class="spinner"></div>
+            <div class="loading-text">Đang tải...</div>
+        </div>
+
+        <!-- Toast Notifications -->
+        <div id="toastContainer" class="toast-container"></div>
+    </div>
+
+    <script src="sounds/sound-manager.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>

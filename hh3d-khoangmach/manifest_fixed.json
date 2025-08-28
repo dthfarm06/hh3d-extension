@@ -1,0 +1,50 @@
+{
+  "manifest_version": 3,
+  "name": "HH3D Khoáng Mạch Auto",
+  "version": "1.0.1",
+  "description": "Tự động nhận thưởng khoáng mạch HoatHinh3D mỗi 15 phút - Enhanced stability",
+  
+  "permissions": [
+    "storage",
+    "alarms",
+    "activeTab",
+    "scripting",
+    "notifications"
+  ],
+  
+  "host_permissions": [
+    "https://hoathinh3d.mx/*"
+  ],
+  
+  "background": {
+    "service_worker": "background.js"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": [
+        "https://hoathinh3d.mx/khoang-mach*",
+        "file://*/test-debug.html*",
+        "*://*/test-debug.html*"
+      ],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
+  ],
+  
+  "action": {
+    "default_popup": "popup.html",
+    "default_title": "HH3D Khoáng Mạch Auto",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    }
+  },
+  
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  }
+}
