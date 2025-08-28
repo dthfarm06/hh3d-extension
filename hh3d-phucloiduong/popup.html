@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHÚC LỢI ĐƯỜNG</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+            color: white;
+            padding: 20px;
+            min-height: 100vh;
+            width: 450px;
+        }
+        
+        .container {
+            background: rgba(0, 0, 0, 0.7);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #fdbb2d;
+        }
+        
+        .header h1 {
+            font-size: 28px;
+            color: #fdbb2d;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+            margin-bottom: 5px;
+        }
+        
+        .header h2 {
+            font-size: 20px;
+            color: #fff;
+            margin-bottom: 15px;
+        }
+        
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .stat-item {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #fdbb2d;
+        }
+        
+        .input-section {
+            margin-bottom: 20px;
+        }
+        
+        .input-section h3 {
+            color: #fdbb2d;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .input-group {
+            margin-bottom: 15px;
+        }
+        
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #fff;
+        }
+        
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #fdbb2d;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+        }
+        
+        .input-group input::placeholder {
+            color: #ccc;
+        }
+        
+        .button-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .button-row {
+            display: flex;
+            gap: 10px;
+        }
+        
+        button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        #phucLoiDuongButton {
+            background: linear-gradient(to right, #9C27B0, #673AB7);
+            color: white;
+            padding: 15px;
+            font-size: 16px;
+            position: relative;
+            line-height: 1.3;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        #phucLoiDuongButton:hover {
+            background: linear-gradient(to right, #673AB7, #9C27B0);
+            transform: translateY(-2px);
+        }
+        
+        #phucLoiDuongButton:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .countdown {
+            font-size: 16px;
+            font-weight: bold;
+            margin: 2px 0;
+            color: #ffeb3b;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+        
+        .result {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            min-height: 100px;
+        }
+        
+        .result h3 {
+            color: #fdbb2d;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        #resultText {
+            color: white;
+            line-height: 1.5;
+        }
+        
+        .info-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+        
+        .info-section h3 {
+            color: #fdbb2d;
+            margin-bottom: 10px;
+            font-size: 18px;
+        }
+        
+        .info-item {
+            margin: 8px 0;
+            padding: 8px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 20px;
+            color: #ccc;
+            font-size: 14px;
+        }
+        
+        .success {
+            color: #4CAF50 !important;
+            font-weight: bold;
+        }
+        
+        .error {
+            color: #FF5252 !important;
+            font-weight: bold;
+        }
+        
+        .info {
+            color: #2196F3 !important;
+        }
+        
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>PHÚC LỢI ĐƯỜNG</h1>
+            
+            <!-- Mode Switcher -->
+            <div style="margin-top: 10px; font-size: 12px;">
+                <label style="color: #ccc; cursor: pointer;">
+                    <input type="checkbox" id="testModeToggle" style="margin-right: 5px;">
+                    🧪 Test Mode (Local Files)
+                </label>
+                <div id="currentMode" style="margin-top: 5px; font-size: 11px; opacity: 0.8;"></div>
+            </div>
+        </div>
+        
+        <div class="input-section">
+            <h3>CÀI ĐẶT PHÚC LỢI ĐƯỜNG</h3>
+            
+            <div class="button-group">
+                <button id="phucLoiDuongButton">PHÚC LỢI ĐƯỜNG</button>
+            </div>
+        </div>
+        
+        <div class="result">
+            <h3>Kết quả:</h3>
+            <div id="resultText">Chưa thực hiện hành động nào.</div>
+        </div>
+    </div>
+
+    <!-- External JavaScript files -->
+    <script src="config.js"></script>
+    <script src="popup.js"></script>
+</body>
+</html>
