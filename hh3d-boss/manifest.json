@@ -5,9 +5,11 @@
   "description": "Tự động hỗ trợ đánh boss trong game Hoang Vực",
   "permissions": [
     "activeTab",
+    "tabs",
     "storage",
     "notifications",
-    "alarms"
+    "alarms",
+    "scripting"
   ],
   "host_permissions": [
     "https://hoathinh3d.mx/*",
@@ -23,7 +25,8 @@
       "file://*/*mock-boss.html*"
     ],
     "js": ["content.js"],
-    "run_at": "document_end"
+    "run_at": "document_end",
+    "all_frames": false
   }],
   "action": {
     "default_popup": "popup.html",

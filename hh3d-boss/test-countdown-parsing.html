@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Countdown Parsing - Boss Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .test-case {
+            background: #f8f9fa;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 4px;
+            border-left: 4px solid #007cba;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .success {
+            background: #e7f5e7;
+            border: 1px solid #b3e5b3;
+            color: #155724;
+        }
+        .error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+        }
+        .countdown-timer {
+            color: white;
+            margin: 10px 0;
+            padding: 10px;
+            background: #333;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+        .button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #005a87;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Boss Helper - Countdown Parsing Test</h1>
+        
+        <div class="test-case">
+            <h3>📋 Test Case 1: Real Countdown Timer</h3>
+            <p>This simulates the actual HTML structure from the game:</p>
+            <div id="countdown-timer" class="countdown-timer">
+                Chờ 12 phút 53 giây để tấn công lần tiếp theo.
+            </div>
+            <button class="button" onclick="testCountdownTimer()">Test Countdown Timer Element</button>
+        </div>
+
+        <div class="test-case">
+            <h3>🧪 Test Case 2: Various Text Formats</h3>
+            <button class="button" onclick="testAllFormats()">Test All Countdown Formats</button>
+        </div>
+
+        <div class="test-case">
+            <h3>🎮 Test Case 3: Live Element Detection</h3>
+            <button class="button" onclick="testElementDetection()">Test Element Detection</button>
+            <button class="button" onclick="updateCountdownTimer()">Update Timer (Random)</button>
+        </div>
+
+        <h3>📊 Test Results</h3>
+        <div id="test-results"></div>
+
+        <h3>📝 Debug Log</h3>
+        <div id="debug-log" class="log">Ready for testing...</div>
+    </div>
+
+    <script>
+        // Copy of the parseCountdown function from content.js
+        function parseCountdown(timerText) {
+            console.log(`[Boss Helper] Parsing countdown text: "${timerText}"`);
+            
+            // Handle different timer formats
+            const patterns = [
+                // New format: "Chờ 12 phút 53 giây để tấn công lần tiếp theo."
+                /Chờ\s+(\d+)\s+phút\s+(\d+)\s+giây/i,  
+                
+                // Alternative Vietnamese formats
+                /Còn\s+(\d+)\s+phút\s+(\d+)\s+giây/i,
+                /(\d+)\s+phút\s+(\d+)\s+giây/i,
+                
+                // Time colon formats (backup)
+                /Còn\s+(\d+):(\d+)/,  // "Còn 5:30"
+                /(\d+):(\d+):(\d+)/,   // "5:30:25" 
+                /(\d+):(\d+)/          // "5:30"
+            ];
+
+            for (const pattern of patterns) {
+                const match = timerText.match(pattern);
+                if (match) {
+                    console.log(`[Boss Helper] Pattern matched:`, match);
+                    
+                    if (match.length === 4) {
+                        // HH:MM:SS format or "X phút Y giây" format
+                        const totalSeconds = parseInt(match[1]) * 60 + parseInt(match[2]);
+                        console.log(`[Boss Helper] Parsed time: ${match[1]} minutes ${match[2]} seconds = ${totalSeconds} seconds`);
+                        return totalSeconds;
+                    } else if (match.length === 3) {
+                        // MM:SS format or "X phút Y giây" format
+                        const totalSeconds = parseInt(match[1]) * 60 + parseInt(match[2]);
+                        console.log(`[Boss Helper] Parsed time: ${match[1]} minutes ${match[2]} seconds = ${totalSeconds} seconds`);
+                        return totalSeconds;
+                    }
+                }
+            }
+            
+            console.log(`[Boss Helper] No pattern matched for: "${timerText}"`);
+            return 0;
+        }
+
+        let logContainer = document.getElementById('debug-log');
+        let resultsContainer = document.getElementById('test-results');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logMessage;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+        
+        function addResult(testName, input, expected, actual, success) {
+            const resultDiv = document.createElement('div');
+            resultDiv.className = `test-result ${success ? 'success' : 'error'}`;
+            resultDiv.innerHTML = `
+                <strong>${testName}</strong><br>
+                Input: "${input}"<br>
+                Expected: ${expected} seconds<br>
+                Actual: ${actual} seconds<br>
+                Status: ${success ? '✅ PASS' : '❌ FAIL'}
+            `;
+            resultsContainer.appendChild(resultDiv);
+        }
+        
+        function testCountdownTimer() {
+            log('Testing countdown timer element...');
+            
+            const timer = document.getElementById('countdown-timer');
+            if (timer) {
+                const text = timer.textContent.trim();
+                const parsed = parseCountdown(text);
+                const expected = 12 * 60 + 53; // 12 minutes 53 seconds = 773 seconds
+                
+                log(`Found timer element: "${text}"`);
+                log(`Parsed result: ${parsed} seconds`);
+                log(`Expected: ${expected} seconds`);
+                
+                addResult('Countdown Timer Element', text, expected, parsed, parsed === expected);
+            } else {
+                log('Countdown timer element not found!');
+                addResult('Countdown Timer Element', 'N/A', 0, 0, false);
+            }
+        }
+        
+        function testAllFormats() {
+            log('Testing all countdown formats...');
+            
+            const testCases = [
+                // Primary format
+                { text: 'Chờ 12 phút 53 giây để tấn công lần tiếp theo.', expected: 773 },
+                { text: 'Chờ 5 phút 30 giây để tấn công lần tiếp theo.', expected: 330 },
+                { text: 'Chờ 0 phút 45 giây để tấn công lần tiếp theo.', expected: 45 },
+                { text: 'Chờ 20 phút 0 giây để tấn công lần tiếp theo.', expected: 1200 },
+                
+                // Alternative formats
+                { text: 'Còn 10 phút 25 giây', expected: 625 },
+                { text: '15 phút 30 giây', expected: 930 },
+                
+                // Colon formats (backup)
+                { text: 'Còn 5:30', expected: 330 },
+                { text: '10:45', expected: 645 },
+                { text: '1:23:45', expected: 5025 },
+                
+                // Edge cases
+                { text: 'Chờ 0 phút 0 giây', expected: 0 },
+                { text: 'No match text', expected: 0 },
+                { text: '', expected: 0 }
+            ];
+            
+            testCases.forEach((testCase, index) => {
+                const parsed = parseCountdown(testCase.text);
+                const success = parsed === testCase.expected;
+                
+                log(`Test ${index + 1}: "${testCase.text}" -> ${parsed} seconds (expected: ${testCase.expected})`);
+                addResult(`Format Test ${index + 1}`, testCase.text, testCase.expected, parsed, success);
+            });
+        }
+        
+        function testElementDetection() {
+            log('Testing element detection...');
+            
+            const timer = document.getElementById('countdown-timer');
+            if (timer) {
+                log('✅ countdown-timer element found');
+                log(`Text content: "${timer.textContent.trim()}"`);
+                log(`Style: ${timer.style.cssText}`);
+                
+                addResult('Element Detection', 'countdown-timer', 'found', 'found', true);
+            } else {
+                log('❌ countdown-timer element not found');
+                addResult('Element Detection', 'countdown-timer', 'found', 'not found', false);
+            }
+        }
+        
+        function updateCountdownTimer() {
+            const timer = document.getElementById('countdown-timer');
+            if (timer) {
+                const minutes = Math.floor(Math.random() * 20);
+                const seconds = Math.floor(Math.random() * 60);
+                const newText = `Chờ ${minutes} phút ${seconds} giây để tấn công lần tiếp theo.`;
+                
+                timer.textContent = newText;
+                log(`Updated timer to: "${newText}"`);
+                
+                // Test the new value
+                const parsed = parseCountdown(newText);
+                const expected = minutes * 60 + seconds;
+                log(`Parsed: ${parsed} seconds, Expected: ${expected} seconds`);
+                
+                addResult('Dynamic Update Test', newText, expected, parsed, parsed === expected);
+            }
+        }
+        
+        // Initial log
+        log('🎮 Boss Helper Countdown Parsing Test initialized');
+        log('Click buttons above to run tests');
+    </script>
+</body>
+</html>

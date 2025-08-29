@@ -3,6 +3,7 @@ class BossMonitor {
   constructor() {
     this.isEnabled = false;
     this.isTestMode = this.detectTestMode();
+    this.isTargetUrl = this.checkTargetUrl();
     this.monitorInterval = null;
     this.countdownInterval = null;
     this.gameState = {
@@ -15,6 +16,16 @@ class BossMonitor {
     };
     
     console.log(`[Boss Helper] Initialized in ${this.isTestMode ? 'TEST' : 'PROD'} mode`);
+    console.log(`[Boss Helper] Target URL: ${this.isTargetUrl ? 'YES' : 'NO'}`);
+    console.log(`[Boss Helper] Current URL: ${window.location.href}`);
+  }
+
+  // Check if current URL matches target pattern
+  checkTargetUrl() {
+    const targetPattern = /^https:\/\/hoathinh3d\.mx\/hoang-vuc\?t=\d+/;
+    const isTarget = targetPattern.test(window.location.href);
+    console.log(`[Boss Helper] URL pattern check: ${window.location.href} -> ${isTarget ? 'MATCH' : 'NO MATCH'}`);
+    return isTarget;
   }
 
   // Detect if running in test mode (local file)
@@ -22,7 +33,7 @@ class BossMonitor {
     const isTest = window.location.protocol === 'file:' || 
                    window.location.href.includes('mock-bicanh.html') ||
                    window.location.href.includes('mock-boss.html');
-    console.log(`[Boss Helper] URL detected: ${window.location.href}`);
+    console.log(`[Boss Helper] Test mode check: ${window.location.href} -> ${isTest ? 'TEST' : 'PROD'}`);
     return isTest;
   }
 
@@ -35,7 +46,8 @@ class BossMonitor {
       bossPopup: document.getElementById('boss-damage-screen'),
       backBtn: document.getElementById('back-button'),
       bossName: document.querySelector('.boss-name'),
-      bossTimer: document.getElementById('boss-timer-text')
+      bossTimer: document.getElementById('boss-timer-text'),
+      countdownTimer: document.getElementById('countdown-timer')
     };
 
     // In production mode, try alternative selectors if standard ones fail
@@ -110,8 +122,18 @@ class BossMonitor {
 
   // Parse countdown timer from button text
   parseCountdown(timerText) {
+    console.log(`[Boss Helper] Parsing countdown text: "${timerText}"`);
+    
     // Handle different timer formats
     const patterns = [
+      // New format: "Chờ 12 phút 53 giây để tấn công lần tiếp theo."
+      /Chờ\s+(\d+)\s+phút\s+(\d+)\s+giây/i,  
+      
+      // Alternative Vietnamese formats
+      /Còn\s+(\d+)\s+phút\s+(\d+)\s+giây/i,
+      /(\d+)\s+phút\s+(\d+)\s+giây/i,
+      
+      // Time colon formats (backup)
       /Còn\s+(\d+):(\d+)/,  // "Còn 5:30"
       /(\d+):(\d+):(\d+)/,   // "5:30:25" 
       /(\d+):(\d+)/          // "5:30"
@@ -120,15 +142,23 @@ class BossMonitor {
     for (const pattern of patterns) {
       const match = timerText.match(pattern);
       if (match) {
+        console.log(`[Boss Helper] Pattern matched:`, match);
+        
         if (match.length === 4) {
-          // HH:MM:SS format
-          return parseInt(match[1]) * 3600 + parseInt(match[2]) * 60 + parseInt(match[3]);
+          // HH:MM:SS format or "X phút Y giây" format
+          const totalSeconds = parseInt(match[1]) * 60 + parseInt(match[2]);
+          console.log(`[Boss Helper] Parsed time: ${match[1]} minutes ${match[2]} seconds = ${totalSeconds} seconds`);
+          return totalSeconds;
         } else if (match.length === 3) {
-          // MM:SS format
-          return parseInt(match[1]) * 60 + parseInt(match[2]);
+          // MM:SS format or "X phút Y giây" format
+          const totalSeconds = parseInt(match[1]) * 60 + parseInt(match[2]);
+          console.log(`[Boss Helper] Parsed time: ${match[1]} minutes ${match[2]} seconds = ${totalSeconds} seconds`);
+          return totalSeconds;
         }
       }
     }
+    
+    console.log(`[Boss Helper] No pattern matched for: "${timerText}"`);
     return 0;
   }
 
@@ -147,7 +177,21 @@ class BossMonitor {
       // Find challenge button
       const challengeBtn = this.findChallengeButton();
       
-      if (challengeBtn) {
+      // Check for countdown timer element first
+      const countdownTimer = document.getElementById('countdown-timer');
+      if (countdownTimer && countdownTimer.textContent.trim()) {
+        const timerText = countdownTimer.textContent.trim();
+        console.log(`[Boss Helper] Found countdown timer element: "${timerText}"`);
+        
+        // Only use countdown timer if we don't have manual countdown running
+        if (!this.countdownInterval) {
+          this.gameState.status = 'countdown';
+          this.gameState.timeLeft = this.parseCountdown(timerText);
+          this.gameState.canChallenge = false;
+          console.log(`[Boss Helper] Set countdown state from timer: ${this.gameState.timeLeft} seconds`);
+        }
+      }
+      else if (challengeBtn) {
         const btnText = challengeBtn.textContent.trim();
         const isDisabled = challengeBtn.disabled || 
                           challengeBtn.classList.contains('disabled');
@@ -649,6 +693,35 @@ class BossMonitor {
   getState() {
     return this.gameState;
   }
+
+  // Handle auto-activation from background script
+  handleAutoActivation(request) {
+    console.log(`[Boss Helper] Auto-activation triggered for URL: ${request.url}`);
+    console.log(`[Boss Helper] Timestamp: ${new Date(request.timestamp).toLocaleString()}`);
+    
+    // Check if we should auto-activate
+    if (this.isTargetUrl || this.isTestMode) {
+      console.log(`[Boss Helper] Auto-activating boss monitor...`);
+      
+      // Enable monitoring if not already enabled
+      if (!this.isEnabled) {
+        this.start();
+        console.log(`[Boss Helper] Boss monitor auto-started successfully!`);
+      } else {
+        console.log(`[Boss Helper] Boss monitor already running`);
+      }
+      
+      // Update storage to enable auto-start
+      chrome.storage.sync.set({ autoEnabled: true }, () => {
+        console.log(`[Boss Helper] Auto-enabled setting saved`);
+      });
+      
+      return true;
+    } else {
+      console.log(`[Boss Helper] Auto-activation skipped - not target URL`);
+      return false;
+    }
+  }
 }
 
 // Initialize monitor
@@ -676,8 +749,16 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         sendResponse({ 
           alive: true, 
           mode: bossMonitor.isTestMode ? 'TEST' : 'PROD',
-          url: window.location.href 
+          url: window.location.href,
+          isTargetUrl: bossMonitor.isTargetUrl,
+          isEnabled: bossMonitor.isEnabled
         });
+        break;
+
+      case 'AUTO_ACTIVATE':
+        console.log(`[Boss Helper] Auto-activate message received: ${request.url}`);
+        bossMonitor.handleAutoActivation(request);
+        sendResponse({ success: true, activated: true });
         break;
         
       default:
@@ -691,11 +772,30 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   return true; // Keep message channel open for async response
 });
 
-// Auto start if enabled in storage
+// Auto start if enabled in storage OR if on target URL
 chrome.storage.sync.get(['autoEnabled'], (result) => {
-  if (result.autoEnabled) {
-    console.log('[Boss Helper] Auto-starting monitor from storage');
-    bossMonitor.start();
+  const shouldAutoStart = result.autoEnabled || bossMonitor.isTargetUrl || bossMonitor.isTestMode;
+  
+  if (shouldAutoStart) {
+    console.log(`[Boss Helper] Auto-starting monitor - autoEnabled: ${result.autoEnabled}, targetUrl: ${bossMonitor.isTargetUrl}, testMode: ${bossMonitor.isTestMode}`);
+    
+    // Delay start to ensure page is fully loaded
+    setTimeout(() => {
+      bossMonitor.start();
+      
+      // If on target URL, also notify background
+      if (bossMonitor.isTargetUrl) {
+        chrome.runtime.sendMessage({
+          type: 'AUTO_ACTIVATE',
+          url: window.location.href,
+          timestamp: Date.now()
+        }).catch(err => {
+          console.log('[Boss Helper] Failed to notify auto-activation:', err);
+        });
+      }
+    }, 2000); // 2 second delay to ensure elements are loaded
+  } else {
+    console.log(`[Boss Helper] Auto-start conditions not met`);
   }
 });
 
@@ -703,9 +803,18 @@ chrome.storage.sync.get(['autoEnabled'], (result) => {
 chrome.runtime.sendMessage({
   type: 'CONTENT_SCRIPT_READY',
   url: window.location.href,
-  mode: bossMonitor.isTestMode ? 'TEST' : 'PROD'
+  mode: bossMonitor.isTestMode ? 'TEST' : 'PROD',
+  isTargetUrl: bossMonitor.isTargetUrl,
+  timestamp: Date.now()
 }).catch(err => {
   console.log('[Boss Helper] Failed to notify ready state:', err);
 });
 
-console.log('[Boss Helper] Content script loaded successfully');
+// Additional logging for debugging
+console.log('='.repeat(60));
+console.log('[Boss Helper] Content script initialization complete');
+console.log(`[Boss Helper] URL: ${window.location.href}`);
+console.log(`[Boss Helper] Mode: ${bossMonitor.isTestMode ? 'TEST' : 'PROD'}`);
+console.log(`[Boss Helper] Target URL: ${bossMonitor.isTargetUrl ? 'YES' : 'NO'}`);
+console.log(`[Boss Helper] Auto-enabled: Checking storage...`);
+console.log('='.repeat(60));

@@ -1,8 +1,39 @@
-# Boss Helper Chrome Extension
+# Boss Helper Chrome Extension - Auto URL Detection
 
-Chrome Extension tự động hỗ trợ đánh boss trong game "Hoang Vực".
+Chrome Extension tự động hỗ trợ đánh boss trong game "Hoang Vực" với tính năng **TỰ ĐỘNG PHÁT HIỆN URL**.
 
-## 🚀 Tính năng
+## 🆕 Tính năng mới - Auto URL Detection & Enhanced Countdown Parsing
+
+- 🎯 **Auto URL Detection**: Tự động phát hiện khi mở tab `https://hoathinh3d.mx/hoang-vuc?t=xxxxx`
+- 🚀 **Auto Activation**: Tự động kích hoạt extension khi phát hiện URL target
+- 🔔 **Smart Notification**: Thông báo khi extension được kích hoạt tự động
+- 📊 **Real-time Monitoring**: Theo dõi tab changes và URL updates
+- ⏰ **Enhanced Countdown Parsing**: Support format "Chờ X phút Y giây để tấn công lần tiếp theo"
+- 🐛 **Debug Logging**: Logging đầy đủ để debug và troubleshoot
+
+## 🕒 Countdown Format Support
+
+Extension hiện hỗ trợ các format countdown sau:
+
+### ✅ Vietnamese Time Formats:
+- `"Chờ 12 phút 53 giây để tấn công lần tiếp theo."` → 773 seconds
+- `"Còn 10 phút 25 giây"` → 625 seconds  
+- `"15 phút 30 giây"` → 930 seconds
+
+### ✅ Colon Time Formats (backup):
+- `"Còn 5:30"` → 330 seconds
+- `"10:45"` → 645 seconds
+- `"1:23:45"` → 5025 seconds
+
+### HTML Element Detection:
+Extension tự động detect element `<div id="countdown-timer">` với format:
+```html
+<div id="countdown-timer" style="color: white; margin-top: 10px;">
+    Chờ 12 phút 53 giây để tấn công lần tiếp theo.
+</div>
+```
+
+## 🚀 Tính năng hiện có
 
 - ✅ **Auto Monitor**: Theo dõi trạng thái boss real-time  
 - ✅ **Auto Challenge**: Tự động click "Khiêu Chiến" khi sẵn sàng
@@ -15,19 +46,85 @@ Chrome Extension tự động hỗ trợ đánh boss trong game "Hoang Vực".
 - ✅ **Attack Counter**: Theo dõi số lượt đánh còn lại (5/ngày)
 - ✅ **Test Mode**: Countdown 30s cho test, 20 phút cho production
 
-## 🔧 Cài đặt
+## 🎯 URL Pattern Target
 
-### Bước 1: Chuẩn bị
-1. Đảm bảo bạn có Google Chrome hoặc Microsoft Edge
-2. Download/clone folder `chrome-extension` này
+Extension sẽ **TỰ ĐỘNG KÍCH HOẠT** khi phát hiện URL theo pattern:
+```
+https://hoathinh3d.mx/hoang-vuc?t=<số bất kì>
+```
 
-### Bước 2: Tạo icon (tuỳ chọn)
-Nếu muốn icon đẹp hơn, tạo 3 files PNG:
-- `icons/icon16.png` (16x16px)
-- `icons/icon48.png` (48x48px)  
-- `icons/icon128.png` (128x128px)
+### Ví dụ URLs hợp lệ:
+- `https://hoathinh3d.mx/hoang-vuc?t=123`
+- `https://hoathinh3d.mx/hoang-vuc?t=999999`
+- `https://hoathinh3d.mx/hoang-vuc?t=1`
+- `https://hoathinh3d.mx/hoang-vuc?t=42&other=param`
 
-Hoặc sử dụng icon SVG có sẵn trong folder.
+### Ví dụ URLs KHÔNG hợp lệ:
+- `https://hoathinh3d.mx/hoang-vuc` (thiếu ?t=số)
+- `https://hoathinh3d.mx/hoang-vuc?t=` (thiếu số)
+- `https://hoathinh3d.mx/hoang-vuc?t=abc` (không phải số)
+- `https://othersite.com/hoang-vuc?t=123` (sai domain)
+
+## 🔧 Cài đặt và Test
+
+### Bước 1: Build Extension
+```bash
+# Chạy build script
+build.bat
+```
+
+### Bước 2: Install Extension
+1. Mở Chrome và vào `chrome://extensions/`
+2. Bật "Developer mode" (toggle ở góc phải)
+3. Click "Load unpacked"
+4. Chọn folder `hh3d-boss`
+5. Extension sẽ được load và sẵn sàng sử dụng!
+
+### Bước 3: Test Auto URL Detection
+
+#### 🧪 Phương pháp 1: Test với URL thật
+1. Navigate đến: `https://hoathinh3d.mx/hoang-vuc?t=123`
+2. Mở Chrome DevTools (F12) → Console tab
+3. Kiểm tra logs của extension:
+   ```
+   [Boss Helper] Target URL detected...
+   [Boss Helper] Extension đã phát hiện game và tự động kích hoạt!
+   ```
+4. Extension sẽ hiện notification và tự động bắt đầu monitor
+
+#### 🧪 Phương pháp 2: Test với Debug Page
+1. Mở file `test-url-detection.html` trong Chrome
+2. Click các button test để verify URL detection
+3. Kiểm tra console logs và status updates
+4. Test các URL pattern khác nhau
+
+## 🐛 Debug và Logging
+
+### Console Logs để theo dõi:
+
+#### Background Script Logs:
+```javascript
+[Boss Helper] Tab listeners initialized
+[Boss Helper] Target URL detected in tab 123: https://hoathinh3d.mx/hoang-vuc?t=456
+[Boss Helper] Extension activated for tab 123
+[Boss Helper] Content script activated successfully in tab 123
+```
+
+#### Content Script Logs:
+```javascript
+[Boss Helper] Initialized in PROD mode
+[Boss Helper] Target URL: YES
+[Boss Helper] Current URL: https://hoathinh3d.mx/hoang-vuc?t=123
+[Boss Helper] Auto-activation triggered for URL: https://hoathinh3d.mx/hoang-vuc?t=123
+[Boss Helper] Boss monitor auto-started successfully!
+```
+
+### Các bước debug:
+1. **Kiểm tra Extension có load không**: Vào `chrome://extensions/` → Tìm "Hoang Vực Auto Boss Helper"
+2. **Check console logs**: F12 → Console → Filter by "Boss Helper"
+3. **Test URL pattern**: Dùng file `test-url-detection.html`
+4. **Check notification**: Extension sẽ hiện popup notification khi activate
+5. **Verify badge**: Extension icon sẽ có badge "🎮" và màu xanh khi active
 
 ### Bước 3: Load Extension
 1. Mở Chrome → Vào `chrome://extensions/`

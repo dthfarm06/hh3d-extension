@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test URL Detection - Boss Helper</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+        }
+        .button {
+            background: #007cba;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:hover {
+            background: #005a87;
+        }
+        .status {
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 4px;
+        }
+        .status.info {
+            background: #e7f3ff;
+            border: 1px solid #b3d9ff;
+        }
+        .status.success {
+            background: #e7f5e7;
+            border: 1px solid #b3e5b3;
+        }
+        .status.warning {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+        }
+        .status.error {
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+        }
+        .test-urls {
+            margin: 15px 0;
+        }
+        .test-url {
+            background: #f8f9fa;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 4px;
+            border: 1px solid #dee2e6;
+            font-family: monospace;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 Boss Helper - URL Detection Test</h1>
+        
+        <div class="status info">
+            <strong>📋 Test Instructions:</strong><br>
+            1. Install extension trong Chrome<br>
+            2. Mở Chrome DevTools (F12) để xem console logs<br>
+            3. Test các URL pattern khác nhau<br>
+            4. Kiểm tra extension có tự động kích hoạt không
+        </div>
+
+        <div class="status warning">
+            <strong>⚠️ Current URL:</strong><br>
+            <span id="current-url"></span>
+        </div>
+
+        <h3>🎯 Target URL Pattern</h3>
+        <div class="test-url">
+            Pattern: https://hoathinh3d.mx/hoang-vuc?t=&lt;số bất kì&gt;
+        </div>
+
+        <h3>✅ Valid Test URLs</h3>
+        <div class="test-urls">
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc?t=123</div>
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc?t=999999</div>
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc?t=1</div>
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc?t=42&other=param</div>
+        </div>
+
+        <h3>❌ Invalid Test URLs</h3>
+        <div class="test-urls">
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc</div>
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc?t=</div>
+            <div class="test-url">https://hoathinh3d.mx/hoang-vuc?t=abc</div>
+            <div class="test-url">https://othersite.com/hoang-vuc?t=123</div>
+        </div>
+
+        <h3>🔧 Test Controls</h3>
+        <button class="button" onclick="simulateTargetUrl()">Simulate Target URL</button>
+        <button class="button" onclick="checkExtensionStatus()">Check Extension Status</button>
+        <button class="button" onclick="testUrlPattern()">Test URL Pattern</button>
+        <button class="button" onclick="clearLog()">Clear Log</button>
+
+        <h3>📊 Extension Status</h3>
+        <div id="extension-status" class="status info">
+            Checking extension status...
+        </div>
+
+        <h3>📝 Debug Log</h3>
+        <div id="debug-log" class="log">
+            Waiting for logs...
+        </div>
+    </div>
+
+    <script>
+        // Display current URL
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        let logContainer = document.getElementById('debug-log');
+        let statusContainer = document.getElementById('extension-status');
+        
+        // Logging function
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logMessage = `[${timestamp}] ${message}\n`;
+            logContainer.textContent += logMessage;
+            logContainer.scrollTop = logContainer.scrollHeight;
+            
+            console.log(`[Test Page] ${message}`);
+        }
+        
+        // Clear log
+        function clearLog() {
+            logContainer.textContent = '';
+            log('Log cleared');
+        }
+        
+        // Update status
+        function updateStatus(message, type = 'info') {
+            statusContainer.className = `status ${type}`;
+            statusContainer.innerHTML = `<strong>Status:</strong> ${message}`;
+        }
+        
+        // Simulate target URL by changing history
+        function simulateTargetUrl() {
+            const testUrl = 'https://hoathinh3d.mx/hoang-vuc?t=' + Math.floor(Math.random() * 1000);
+            log(`Simulating navigation to: ${testUrl}`);
+            
+            // This won't actually navigate but will test URL pattern
+            history.pushState({}, '', testUrl);
+            document.getElementById('current-url').textContent = window.location.href;
+            
+            // Test the pattern
+            testUrlPattern();
+        }
+        
+        // Test URL pattern matching
+        function testUrlPattern() {
+            const currentUrl = window.location.href;
+            const targetPattern = /^https:\/\/hoathinh3d\.mx\/hoang-vuc\?t=\d+/;
+            const isMatch = targetPattern.test(currentUrl);
+            
+            log(`Testing URL: ${currentUrl}`);
+            log(`Pattern match: ${isMatch ? 'YES ✅' : 'NO ❌'}`);
+            
+            if (isMatch) {
+                updateStatus('URL pattern MATCHES target! Extension should activate.', 'success');
+            } else {
+                updateStatus('URL pattern does NOT match target.', 'warning');
+            }
+        }
+        
+        // Check extension status
+        function checkExtensionStatus() {
+            log('Checking extension status...');
+            
+            // Try to communicate with extension
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({
+                    type: 'HEALTH_CHECK'
+                }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        log(`Extension error: ${chrome.runtime.lastError.message}`, 'error');
+                        updateStatus('Extension not responding or not installed', 'error');
+                    } else if (response) {
+                        log(`Extension response: ${JSON.stringify(response, null, 2)}`);
+                        updateStatus(`Extension active - Mode: ${response.mode}, Enabled: ${response.isEnabled}`, 'success');
+                    } else {
+                        log('No response from extension');
+                        updateStatus('Extension not responding', 'warning');
+                    }
+                });
+            } else {
+                log('Chrome extension APIs not available');
+                updateStatus('Not running in Chrome extension context', 'error');
+            }
+        }
+        
+        // Listen for extension messages
+        if (typeof chrome !== 'undefined' && chrome.runtime) {
+            chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+                log(`Received message from extension: ${JSON.stringify(request, null, 2)}`);
+                
+                if (request.type === 'AUTO_ACTIVATE') {
+                    updateStatus('Extension AUTO-ACTIVATED! 🎉', 'success');
+                }
+                
+                sendResponse({success: true});
+                return true;
+            });
+        }
+        
+        // Initial setup
+        window.addEventListener('load', () => {
+            log('Test page loaded');
+            testUrlPattern();
+            setTimeout(checkExtensionStatus, 1000);
+        });
+        
+        // Monitor URL changes
+        window.addEventListener('popstate', () => {
+            log('URL changed via popstate');
+            document.getElementById('current-url').textContent = window.location.href;
+            testUrlPattern();
+        });
+        
+        // Add some test data
+        log('🎮 Boss Helper URL Detection Test initialized');
+        log('Open Chrome DevTools Console to see detailed logs');
+        log('Make sure extension is installed and enabled');
+    </script>
+</body>
+</html>

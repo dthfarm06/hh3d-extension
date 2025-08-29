@@ -4,6 +4,132 @@ class BackgroundManager {
     this.gameState = null;
     this.lastNotificationTime = 0;
     this.activeTabs = new Set();
+    this.targetUrlPattern = /^https:\/\/hoathinh3d\.mx\/hoang-vuc\?t=\d+/;
+    
+    // Set up tab listeners
+    this.setupTabListeners();
+  }
+
+  // Set up tab listeners for auto-detection
+  setupTabListeners() {
+    // Listen for tab updates (URL changes, page loads)
+    chrome.tabs.onUpdated.addListener((tabId, changeInfo, tab) => {
+      this.handleTabUpdate(tabId, changeInfo, tab);
+    });
+
+    // Listen for new tabs
+    chrome.tabs.onCreated.addListener((tab) => {
+      this.handleTabCreated(tab);
+    });
+
+    // Listen for tab activation (user switches to tab)
+    chrome.tabs.onActivated.addListener((activeInfo) => {
+      this.handleTabActivated(activeInfo);
+    });
+
+    console.log('[Boss Helper] Tab listeners initialized');
+  }
+
+  // Handle tab updates (URL changes, page loads)
+  handleTabUpdate(tabId, changeInfo, tab) {
+    // Only process when URL changes or page completes loading
+    if (changeInfo.url || changeInfo.status === 'complete') {
+      const url = changeInfo.url || tab.url;
+      
+      if (url && this.isTargetUrl(url)) {
+        console.log(`[Boss Helper] Target URL detected in tab ${tabId}: ${url}`);
+        this.handleTargetUrlDetected(tabId, tab, url);
+      }
+    }
+  }
+
+  // Handle new tab creation
+  handleTabCreated(tab) {
+    if (tab.url && this.isTargetUrl(tab.url)) {
+      console.log(`[Boss Helper] Target URL detected in new tab ${tab.id}: ${tab.url}`);
+      this.handleTargetUrlDetected(tab.id, tab, tab.url);
+    }
+  }
+
+  // Handle tab activation
+  handleTabActivated(activeInfo) {
+    chrome.tabs.get(activeInfo.tabId, (tab) => {
+      if (chrome.runtime.lastError) {
+        console.log('[Boss Helper] Error getting active tab:', chrome.runtime.lastError.message);
+        return;
+      }
+      
+      if (tab.url && this.isTargetUrl(tab.url)) {
+        console.log(`[Boss Helper] Target URL activated in tab ${tab.id}: ${tab.url}`);
+        this.handleTargetUrlDetected(tab.id, tab, tab.url);
+      }
+    });
+  }
+
+  // Check if URL matches target pattern
+  isTargetUrl(url) {
+    const isMatch = this.targetUrlPattern.test(url);
+    if (isMatch) {
+      console.log(`[Boss Helper] URL pattern match: ${url}`);
+    }
+    return isMatch;
+  }
+
+  // Handle when target URL is detected
+  handleTargetUrlDetected(tabId, tab, url) {
+    // Add to active tabs
+    this.activeTabs.add(tabId);
+    
+    // Show notification
+    this.showNotification(
+      '🎮 Hoang Vực Detected!', 
+      `Extension đã phát hiện game và tự động kích hoạt!\nURL: ${url}`
+    );
+
+    // Send activation message to content script (with retry)
+    this.activateContentScript(tabId, url);
+
+    // Update badge to show active state
+    chrome.action.setBadgeText({ text: '🎮', tabId: tabId });
+    chrome.action.setBadgeBackgroundColor({ color: '#00ff00', tabId: tabId });
+    chrome.action.setTitle({ 
+      title: 'Boss Helper - Đã kích hoạt tự động!',
+      tabId: tabId 
+    });
+
+    console.log(`[Boss Helper] Extension activated for tab ${tabId}: ${url}`);
+  }
+
+  // Activate content script with retry mechanism
+  activateContentScript(tabId, url, retryCount = 0) {
+    const maxRetries = 5;
+    const retryDelay = 1000; // 1 second
+
+    // Wait a bit for content script to load
+    setTimeout(() => {
+      chrome.tabs.sendMessage(tabId, { 
+        type: 'AUTO_ACTIVATE',
+        url: url,
+        timestamp: Date.now()
+      }).then(response => {
+        if (response && response.success) {
+          console.log(`[Boss Helper] Content script activated successfully in tab ${tabId}`);
+        } else {
+          console.log(`[Boss Helper] Content script activation failed for tab ${tabId}, response:`, response);
+        }
+      }).catch(error => {
+        console.log(`[Boss Helper] Failed to activate content script in tab ${tabId} (attempt ${retryCount + 1}):`, error.message);
+        
+        // Retry if we haven't exceeded max retries
+        if (retryCount < maxRetries) {
+          setTimeout(() => {
+            this.activateContentScript(tabId, url, retryCount + 1);
+          }, retryDelay * (retryCount + 1)); // Exponential backoff
+        } else {
+          console.error(`[Boss Helper] Failed to activate content script after ${maxRetries} attempts`);
+        }
+      });
+    }, 500); // Initial delay to let content script load
   }
 
   // Handle messages from content script and popup
@@ -22,6 +148,11 @@ class BackgroundManager {
 
         case 'CONTENT_SCRIPT_READY':
           this.handleContentScriptReady(request, sender.tab);
+          sendResponse({ success: true });
+          break;
+
+        case 'AUTO_ACTIVATE':
+          this.handleAutoActivateRequest(request, sender.tab);
           sendResponse({ success: true });
           break;
 
@@ -50,10 +181,29 @@ class BackgroundManager {
     console.log(`[Boss Helper] Content script ready on ${request.mode} mode: ${request.url}`);
     this.activeTabs.add(tab.id);
     
+    // Check if this is a target URL and auto-activate if needed
+    if (this.isTargetUrl(request.url)) {
+      console.log(`[Boss Helper] Auto-activating for target URL: ${request.url}`);
+      // Send auto-activate message to content script
+      setTimeout(() => {
+        chrome.tabs.sendMessage(tab.id, { 
+          type: 'AUTO_ACTIVATE',
+          url: request.url,
+          timestamp: Date.now()
+        });
+      }, 1000);
+    }
+    
     // Remove tab from active set when closed
     chrome.tabs.onRemoved.addListener((tabId) => {
       this.activeTabs.delete(tabId);
     });
+  }
+
+  // Handle auto-activate request from content script
+  handleAutoActivateRequest(request, tab) {
+    console.log(`[Boss Helper] Auto-activate request from tab ${tab.id}: ${request.url}`);
+    this.handleTargetUrlDetected(tab.id, tab, request.url);
   }
 
   // Update game state and trigger notifications
