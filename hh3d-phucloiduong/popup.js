@@ -36,6 +36,63 @@ async function savePhucLoiDuongState(state) {
 
 async function clearPhucLoiDuongState() {
     await chrome.storage.local.remove(['phucLoiDuongState']);
+    // Dừng icon timer khi clear state
+    sendMessageToBackground('STOP_ICON_TIMER');
+}
+
+// ==================== ICON FUNCTIONS ====================
+
+// Hàm gửi message đến background để cập nhật icon
+function sendMessageToBackground(type, data = {}) {
+    chrome.runtime.sendMessage({ type, ...data }, (response) => {
+        if (chrome.runtime.lastError) {
+            console.log('❌ Error sending message to background:', chrome.runtime.lastError.message);
+        } else {
+            console.log('✅ Message sent to background:', type, response);
+        }
+    });
+}
+
+// Hàm cập nhật icon dựa trên state
+async function updateIconBasedOnState(state) {
+    if (!state || !state.isRunning) {
+        // Không chạy - reset về icon mặc định
+        sendMessageToBackground('STOP_ICON_TIMER');
+        return;
+    }
+    
+    if (state.endTime) {
+        const now = Date.now();
+        const timeLeft = Math.max(0, Math.floor((state.endTime - now) / 1000));
+        const minutesLeft = Math.floor(timeLeft / 60);
+        
+        if (timeLeft > 0) {
+            // Còn thời gian - hiển thị phút còn lại
+            sendMessageToBackground('UPDATE_ICON', {
+                minutes: minutesLeft,
+                cyclesLeft: null,
+                isCompleted: false
+            });
+        } else {
+            // Hết thời gian chu trình hiện tại
+            const cyclesRemaining = state.maxCycles - state.currentCycle;
+            if (cyclesRemaining > 0) {
+                // Còn chu trình - hiển thị số lượt còn lại (icon xanh)
+                sendMessageToBackground('UPDATE_ICON', {
+                    minutes: null,
+                    cyclesLeft: cyclesRemaining,
+                    isCompleted: false
+                });
+            } else {
+                // Hết tất cả chu trình (icon xanh với số 0)
+                sendMessageToBackground('UPDATE_ICON', {
+                    minutes: null,
+                    cyclesLeft: null,
+                    isCompleted: true
+                });
+            }
+        }
+    }
 }
 
 // ==================== PHÚC LỢI ĐƯỜNG FUNCTIONS ====================
@@ -67,6 +124,9 @@ async function phucLoiDuong() {
     
     await savePhucLoiDuongState(newState);
     updateResult('🎁 Bắt đầu chu trình Phúc Lợi Đường (1/4)', 'info');
+    
+    // Bắt đầu icon timer
+    sendMessageToBackground('START_ICON_TIMER');
     
     // Mở trang và click rương
     performPhucLoiDuongClick();
@@ -131,6 +191,9 @@ async function updatePhucLoiDuongButtonUI() {
             
             button.innerHTML = `PHÚC LỢI ĐƯỜNG ${state.currentCycle}/4<br><span class="countdown">${timeDisplay}</span><br><small style="font-size: 12px; opacity: 0.8;">(Click để dừng)</small>`;
             button.style.background = 'linear-gradient(to right, #9C27B0, #673AB7)';
+            
+            // Cập nhật icon với số phút còn lại
+            updateIconBasedOnState();
         } else {
             // Hết thời gian, chuyển sang chu trình tiếp theo
             state.currentCycle++;
@@ -145,15 +208,22 @@ async function updatePhucLoiDuongButtonUI() {
                 button.style.background = 'linear-gradient(to right, #4CAF50, #2E8B57)';
                 updateResult('🎉 Hoàn thành tất cả 4 chu trình Phúc Lợi Đường!', 'success');
                 
+                // Cập nhật icon thành hoàn thành
+                updateIconBasedOnState();
+                
                 // Reset về trạng thái ban đầu sau 5 giây
                 setTimeout(async () => {
                     button.style.background = 'linear-gradient(to right, #9C27B0, #673AB7)';
                     await updatePhucLoiDuongButtonUI();
+                    updateIconBasedOnState(); // Reset icon về trạng thái bình thường
                 }, 5000);
             } else {
                 // Bắt đầu chu trình tiếp theo
                 state.endTime = Date.now() + (30 * 60 * 1000); // 30 phút cho chu trình tiếp theo
                 await savePhucLoiDuongState(state);
+                
+                // Cập nhật icon cho chu trình mới
+                updateIconBasedOnState();
                 
                 updateResult(`🔄 Bắt đầu chu trình ${state.currentCycle}/4`, 'info');
                 performPhucLoiDuongClick();
@@ -200,6 +270,7 @@ async function restorePhucLoiDuongState() {
                 
                 // Bắt đầu interval để cập nhật UI
                 startPhucLoiDuongTimer();
+                updateIconBasedOnState(); // Cập nhật icon khi khôi phục state
             } else {
                 // Hết thời gian, chuyển sang cycle tiếp theo hoặc hoàn thành
                 if (state.currentCycle >= state.maxCycles) {
@@ -209,6 +280,7 @@ async function restorePhucLoiDuongState() {
                     }
                     await clearPhucLoiDuongState();
                     updateResult('🎉 Hoàn thành tất cả 4 chu trình Phúc Lợi Đường!', 'success');
+                    updateIconBasedOnState(); // Cập nhật icon khi hoàn thành
                 } else {
                     state.currentCycle++;
                     state.endTime = Date.now() + (30 * 60 * 1000);
@@ -216,8 +288,10 @@ async function restorePhucLoiDuongState() {
                     updateResult(`🔄 Bắt đầu chu trình ${state.currentCycle}/4`, 'info');
                     performPhucLoiDuongClick();
                     startPhucLoiDuongTimer();
+                    updateIconBasedOnState(); // Cập nhật icon cho chu trình mới
                 }
                 await updatePhucLoiDuongButtonUI();
+                updateIconBasedOnState(); // Cập nhật icon sau khi thay đổi state
             }
         }
     } catch (error) {
@@ -266,6 +340,9 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // Khôi phục trạng thái khi popup được mở
     restorePhucLoiDuongState();
+    
+    // Cập nhật icon ngay khi popup mở
+    updateIconBasedOnState();
     
     // Setup mode toggle
     setupModeToggle();

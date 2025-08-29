@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timed URL Cycler</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 14px; min-width: 260px; }
+    .label { color: #666; font-size: 12px; }
+    .value { font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h3>Timed URL Cycler</h3>
+  <div><span class="label">Đang chạy: </span><span id="running" class="value">—</span></div>
+  <div><span class="label">Mục hiện tại: </span><span id="currentIdx" class="value">—</span></div>
+  <div><span class="label">Còn lại đến chu kỳ mới: </span><span id="countdown" class="value">—</span></div>
+  <p class="label">Chỉnh cấu hình tại <b>Options</b>.</p>
+
+  <script src="popup.js"></script>
+</body>
+</html>

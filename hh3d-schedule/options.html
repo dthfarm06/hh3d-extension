@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <title>Timed URL Cycler – Options</title>
+  <style>
+    body { font-family: system-ui, sans-serif; margin: 24px; }
+    label { display:block; margin: 8px 0 4px; font-weight: 600; }
+    input, textarea, button { width: 100%; padding: 8px; box-sizing: border-box; }
+    textarea { height: 200px; font-family: ui-monospace, Menlo, Consolas, monospace; }
+    .row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    .hint { color: #666; font-size: 12px; margin-top: 4px; }
+    .ok { color: #0a0; font-weight: 600; }
+    .err { color: #d00; font-weight: 600; }
+  </style>
+</head>
+<body>
+  <h1>Timed URL Cycler – Options</h1>
+
+  <div class="row">
+    <div>
+      <label>Delay giữa các chu kỳ (phút)</label>
+      <input id="delayMinutes" type="number" min="1" step="1" />
+    </div>
+    <div>
+      <label>Thời gian giữ openUrl (ms)</label>
+      <input id="openDwellMs" type="number" min="1000" step="500" />
+    </div>
+  </div>
+
+  <div class="row" style="margin-top: 8px;">
+    <div>
+      <label>Thời gian giữ sau khi thay thế (ms)</label>
+      <input id="replaceDwellMs" type="number" min="1000" step="500" />
+    </div>
+    <div></div>
+  </div>
+
+  <label style="margin-top: 12px;">Danh sách cặp URL (mỗi dòng: openUrl,replaceUrl)</label>
+  <textarea id="pairs"></textarea>
+  <div class="hint">Ví dụ:
+    <br>https://hoathinh3d.mx/phuc-loi-duong
+    <br>https://hoathinh3d.mx/hoang-vuc?t=b3ddd
+    <br>https://hoathinh3d.mx/tien-duyen?t=a3dd1
+  </div>
+
+  <div style="display:flex; gap:12px; margin-top: 16px;">
+    <button id="saveBtn">Save</button>
+    <button id="resetBtn">Reset to defaults</button>
+  </div>
+
+  <p id="status"></p>
+
+  <script src="options.js"></script>
+</body>
+</html>
